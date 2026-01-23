@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーソナルカラー診断 | あなたに似合う色を発見</title>
+    <meta name="description" content="顔写真からパーソナルカラーを診断。あなたに似合うメイクカラーと服の色を提案します。">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-effects">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🎨</div>
+                <h1>パーソナルカラー診断</h1>
+            </div>
+            <p class="tagline">顔写真をアップロードして、あなたに最も似合う色を発見しましょう</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section class="upload-section glass-card" id="uploadSection">
+                <div class="drop-zone" id="dropZone">
+                    <span class="drop-zone-icon">📸</span>
+                    <h3>写真をアップロード</h3>
+                    <p>ドラッグ＆ドロップまたはボタンから選択</p>
+                    
+                    <div class="upload-buttons">
+                        <button class="btn btn-primary" id="browseBtn">
+                            <span class="btn-icon">📁</span>
+                            ファイルを選択
+                        </button>
+                        <button class="btn btn-secondary" id="cameraBtn">
+                            <span class="btn-icon">📷</span>
+                            カメラで撮影
+                        </button>
+                    </div>
+                    
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+
+                <!-- Preview -->
+                <div class="preview-section hidden" id="previewSection">
+                    <div class="preview-container">
+                        <img id="previewImage" alt="プレビュー">
+                    </div>
+                    <div class="preview-actions">
+                        <button class="btn btn-secondary" id="retakeBtn">
+                            <span class="btn-icon">↩️</span>
+                            撮り直す
+                        </button>
+                        <button class="btn btn-primary" id="analyzeBtn">
+                            <span class="btn-icon">✨</span>
+                            診断する
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Camera Modal -->
+            <div class="camera-modal hidden" id="cameraModal">
+                <div class="camera-container">
+                    <video id="cameraVideo" autoplay playsinline></video>
+                    <div class="camera-controls">
+                        <button class="btn btn-secondary" id="closeCameraBtn">
+                            <span class="btn-icon">✕</span>
+                            閉じる
+                        </button>
+                        <button class="btn btn-primary" id="captureBtn">
+                            <span class="btn-icon">📸</span>
+                            撮影
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <section class="result-section hidden" id="resultSection">
+                <!-- Result Header -->
+                <div class="result-header">
+                    <div class="result-type-badge">あなたのパーソナルカラー</div>
+                    <h2 class="result-type-name" id="resultType">スプリング</h2>
+                    <p class="result-type-en" id="resultTypeEn">Spring</p>
+                    <p class="result-description" id="resultDescription"></p>
+                    
+                    <div class="result-meta">
+                        <div class="meta-item">
+                            <span>🎨</span>
+                            <span id="resultUndertone">イエローベース</span>
+                        </div>
+                        <div class="meta-item">
+                            <span>検出した肌色:</span>
+                            <div class="detected-skin-color" id="detectedSkinColor"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Characteristics -->
+                <div class="result-card characteristics-card">
+                    <h3><span class="card-icon">✨</span>あなたの特徴</h3>
+                    <ul class="characteristics-list" id="characteristics"></ul>
+                </div>
+
+                <!-- Makeup Recommendations -->
+                <div class="result-grid">
+                    <h2 style="grid-column: 1 / -1; text-align: center; font-size: 1.8rem; margin-bottom: 10px;">
+                        💄 おすすめメイクカラー
+                    </h2>
+                    
+                    <div class="makeup-grid" style="grid-column: 1 / -1;">
+                        <!-- Eyeshadow -->
+                        <div class="result-card">
+                            <h3><span class="card-icon">👁️</span>アイシャドウ</h3>
+                            <div class="color-palette" id="eyeshadowColors"></div>
+                        </div>
+
+                        <!-- Cheek -->
+                        <div class="result-card">
+                            <h3><span class="card-icon">🌸</span>チーク</h3>
+                            <div class="color-palette" id="cheekColors"></div>
+                        </div>
+
+                        <!-- Foundation -->
+                        <div class="result-card">
+                            <h3><span class="card-icon">✨</span>ファンデーション</h3>
+                            <div class="color-palette" id="foundationColors"></div>
+                        </div>
+
+                        <!-- Eyeliner -->
+                        <div class="result-card">
+                            <h3><span class="card-icon">✏️</span>アイライン</h3>
+                            <div class="color-palette" id="eyelinerColors"></div>
+                        </div>
+
+                        <!-- Lip -->
+                        <div class="result-card">
+                            <h3><span class="card-icon">💋</span>リップ</h3>
+                            <div class="color-palette" id="lipColors"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fashion Recommendations -->
+                <div class="result-card fashion-section" style="margin-top: 40px;">
+                    <h3><span class="card-icon">👗</span>おすすめファッションカラー</h3>
+                    
+                    <div class="fashion-subsection">
+                        <h4>✅ 似合う色</h4>
+                        <div class="fashion-colors" id="fashionBest"></div>
+                    </div>
+                    
+                    <div class="fashion-subsection">
+                        <h4>⚠️ 避けたい色</h4>
+                        <div class="fashion-colors" id="fashionAvoid"></div>
+                    </div>
+                </div>
+
+                <!-- Restart -->
+                <div class="restart-section">
+                    <button class="btn btn-secondary" id="restartBtn">
+                        <span class="btn-icon">🔄</span>
+                        もう一度診断する
+                    </button>
+                </div>
+            </section>
+
+            <!-- Hidden Canvas for Analysis -->
+            <canvas id="analysisCanvas"></canvas>
+        </main>
+
+        <footer>
+            <p>© 2026 パーソナルカラー診断アプリ | あなたの魅力を引き出す色を見つけよう</p>
+        </footer>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

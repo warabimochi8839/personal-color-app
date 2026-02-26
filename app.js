@@ -318,6 +318,34 @@ function displayResults(result) {
     renderFashionColors('fashionBest', result.data.fashion.best);
     renderFashionColors('fashionAvoid', result.data.fashion.avoid);
 
+    // Update hairstyle recommendations
+    if (result.data.hairstyle) {
+        document.getElementById('hairstyleDescription').textContent = result.data.hairstyle.description;
+        renderHairstyleList('hairstyleShort', result.data.hairstyle.short);
+        renderHairstyleList('hairstyleMedium', result.data.hairstyle.medium);
+        renderHairstyleList('hairstyleLong', result.data.hairstyle.long);
+    }
+
+    // Update hair color recommendations
+    if (result.data.hairColor) {
+        document.getElementById('hairColorDescription').textContent = result.data.hairColor.description;
+        renderFashionColorsWithDesc('hairColorBest', result.data.hairColor.recommended);
+        renderFashionColorsWithDesc('hairColorAvoid', result.data.hairColor.avoid);
+    }
+
+    // Update accessories recommendations
+    if (result.data.accessories) {
+        document.getElementById('accessoriesDescription').textContent = result.data.accessories.description;
+        renderFashionColorsWithDesc('accessoriesMetals', result.data.accessories.metals);
+        renderFashionColorsWithDesc('accessoriesStones', result.data.accessories.stones);
+    }
+
+    // Update nail recommendations
+    if (result.data.nail) {
+        document.getElementById('nailDescription').textContent = result.data.nail.description;
+        renderFashionColorsWithDesc('nailColors', result.data.nail.recommended);
+    }
+
     // Add animation to result cards
     animateResultCards();
 }
@@ -339,6 +367,28 @@ function renderFashionColors(containerId, colors) {
     const container = document.getElementById(containerId);
     container.innerHTML = colors.map(c => `
         <div class="fashion-color-item">
+            <div class="fashion-color-swatch" style="background-color: ${c.color}"></div>
+            <span class="fashion-color-name">${c.name}</span>
+        </div>
+    `).join('');
+}
+
+function renderHairstyleList(containerId, hairstyles) {
+    const container = document.getElementById(containerId);
+    if (!container || !hairstyles) return;
+    container.innerHTML = hairstyles.map(h => `
+        <div class="hairstyle-item">
+            <div class="hairstyle-name">${h.name}</div>
+            <div class="hairstyle-desc">${h.description}</div>
+        </div>
+    `).join('');
+}
+
+function renderFashionColorsWithDesc(containerId, colors) {
+    const container = document.getElementById(containerId);
+    if (!container || !colors) return;
+    container.innerHTML = colors.map(c => `
+        <div class="fashion-color-item" title="${c.description}">
             <div class="fashion-color-swatch" style="background-color: ${c.color}"></div>
             <span class="fashion-color-name">${c.name}</span>
         </div>

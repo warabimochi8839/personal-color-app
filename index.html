@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>パーソナルカラー診断 | あなたに似合う色を発見</title>
     <meta name="description" content="顔写真からパーソナルカラーを診断。あなたに似合うメイクカラーと服の色を提案します。">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Background Effects -->
     <div class="bg-effects">
@@ -39,7 +42,7 @@
                     <span class="drop-zone-icon">📸</span>
                     <h3>写真をアップロード</h3>
                     <p>ドラッグ＆ドロップまたはボタンから選択</p>
-                    
+
                     <div class="upload-buttons">
                         <button class="btn btn-primary" id="browseBtn">
                             <span class="btn-icon">📁</span>
@@ -50,7 +53,7 @@
                             カメラで撮影
                         </button>
                     </div>
-                    
+
                     <input type="file" id="fileInput" accept="image/*" hidden>
                 </div>
 
@@ -97,7 +100,7 @@
                     <h2 class="result-type-name" id="resultType">スプリング</h2>
                     <p class="result-type-en" id="resultTypeEn">Spring</p>
                     <p class="result-description" id="resultDescription"></p>
-                    
+
                     <div class="result-meta">
                         <div class="meta-item">
                             <span>🎨</span>
@@ -121,7 +124,7 @@
                     <h2 style="grid-column: 1 / -1; text-align: center; font-size: 1.8rem; margin-bottom: 10px;">
                         💄 おすすめメイクカラー
                     </h2>
-                    
+
                     <div class="makeup-grid" style="grid-column: 1 / -1;">
                         <!-- Eyeshadow -->
                         <div class="result-card">
@@ -158,15 +161,99 @@
                 <!-- Fashion Recommendations -->
                 <div class="result-card fashion-section" style="margin-top: 40px;">
                     <h3><span class="card-icon">👗</span>おすすめファッションカラー</h3>
-                    
+
                     <div class="fashion-subsection">
                         <h4>✅ 似合う色</h4>
                         <div class="fashion-colors" id="fashionBest"></div>
                     </div>
-                    
+
                     <div class="fashion-subsection">
                         <h4>⚠️ 避けたい色</h4>
                         <div class="fashion-colors" id="fashionAvoid"></div>
+                    </div>
+                </div>
+
+                <!-- Hairstyle Recommendations -->
+                <div class="result-card" style="margin-top: 40px;">
+                    <h3><span class="card-icon">💇</span>似合う髪型</h3>
+                    <p class="section-description" id="hairstyleDescription"></p>
+
+                    <div class="hairstyle-grid">
+                        <div class="hairstyle-category">
+                            <h4>✂️ ショート</h4>
+                            <div class="hairstyle-list" id="hairstyleShort"></div>
+                        </div>
+                        <div class="hairstyle-category">
+                            <h4>💫 ミディアム</h4>
+                            <div class="hairstyle-list" id="hairstyleMedium"></div>
+                        </div>
+                        <div class="hairstyle-category">
+                            <h4>🌟 ロング</h4>
+                            <div class="hairstyle-list" id="hairstyleLong"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hair Color Recommendations -->
+                <div class="result-card" style="margin-top: 24px;">
+                    <h3><span class="card-icon">🎨</span>似合う髪色</h3>
+                    <p class="section-description" id="hairColorDescription"></p>
+
+                    <div class="fashion-subsection">
+                        <h4>✅ おすすめカラー</h4>
+                        <div class="fashion-colors" id="hairColorBest"></div>
+                    </div>
+
+                    <div class="fashion-subsection">
+                        <h4>⚠️ 避けたい色</h4>
+                        <div class="fashion-colors" id="hairColorAvoid"></div>
+                    </div>
+                </div>
+
+                <!-- Accessories Recommendations -->
+                <div class="result-card" style="margin-top: 24px;">
+                    <h3><span class="card-icon">💎</span>似合うアクセサリー</h3>
+                    <p class="section-description" id="accessoriesDescription"></p>
+
+                    <div class="fashion-subsection">
+                        <h4>🔗 メタル</h4>
+                        <div class="fashion-colors" id="accessoriesMetals"></div>
+                    </div>
+
+                    <div class="fashion-subsection">
+                        <h4>💠 ストーン</h4>
+                        <div class="fashion-colors" id="accessoriesStones"></div>
+                    </div>
+                </div>
+
+                <!-- Nail Recommendations -->
+                <div class="result-card" style="margin-top: 24px;">
+                    <h3><span class="card-icon">💅</span>似合うネイルカラー</h3>
+                    <p class="section-description" id="nailDescription"></p>
+                    <div class="fashion-colors" id="nailColors"></div>
+                </div>
+
+                <!-- Share & Save Section -->
+                <div class="result-card share-section" style="margin-top: 40px;">
+                    <h3><span class="card-icon">📤</span>結果をシェア・保存</h3>
+
+                    <div class="share-buttons">
+                        <button class="btn btn-share btn-twitter" id="shareTwitter">
+                            <span class="btn-icon">🐦</span>
+                            Twitter
+                        </button>
+                        <button class="btn btn-share btn-line" id="shareLine">
+                            <span class="btn-icon">💬</span>
+                            LINE
+                        </button>
+                        <button class="btn btn-share btn-copy" id="copyResult">
+                            <span class="btn-icon">📋</span>
+                            コピー
+                        </button>
+                        <button class="btn btn-primary" id="saveImage">
+                            <span class="btn-icon">💾</span>
+                            画像で保存
+                        </button>
                     </div>
                 </div>
 
@@ -175,6 +262,10 @@
                     <button class="btn btn-secondary" id="restartBtn">
                         <span class="btn-icon">🔄</span>
                         もう一度診断する
+                    </button>
+                    <button class="btn btn-secondary" id="historyBtn" style="margin-left: 16px;">
+                        <span class="btn-icon">📜</span>
+                        履歴を見る
                     </button>
                 </div>
             </section>
@@ -188,6 +279,28 @@
         </footer>
     </div>
 
+    <!-- History Modal -->
+    <div class="modal hidden" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📜 診断履歴</h2>
+                <button class="btn-close" id="closeHistoryBtn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="history-list" id="historyList">
+                    <p class="no-history">履歴がありません</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Switcher (floating) -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" data-lang="ja">🇯🇵</button>
+        <button class="lang-btn" data-lang="en">🇺🇸</button>
+    </div>
+
     <script type="module" src="app.js"></script>
 </body>
+
 </html>

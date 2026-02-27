@@ -9,48 +9,71 @@ const cameraModal = document.getElementById('cameraModal');
 const cameraVideo = document.getElementById('cameraVideo');
 const captureBtn = document.getElementById('captureBtn');
 const closeCameraBtn = document.getElementById('closeCameraBtn');
+
+// Screens
+const welcomeScreen = document.getElementById('welcomeScreen');
+const resultScope = document.getElementById('resultScope');
+const closetScreen = document.getElementById('closetScreen');
+
 const previewSection = document.getElementById('previewSection');
 const previewImage = document.getElementById('previewImage');
 const analyzeBtn = document.getElementById('analyzeBtn');
 const retakeBtn = document.getElementById('retakeBtn');
-const resultSection = document.getElementById('resultSection');
 const analysisCanvas = document.getElementById('analysisCanvas');
 
 let currentStream = null;
 
 // Event Listeners
-browseBtn.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', handleFileSelect);
-cameraBtn.addEventListener('click', openCamera);
-closeCameraBtn.addEventListener('click', closeCamera);
-captureBtn.addEventListener('click', capturePhoto);
-analyzeBtn.addEventListener('click', startAnalysis);
-retakeBtn.addEventListener('click', resetToUpload);
+browseBtn?.addEventListener('click', () => fileInput.click());
+fileInput?.addEventListener('change', handleFileSelect);
+cameraBtn?.addEventListener('click', openCamera);
+closeCameraBtn?.addEventListener('click', closeCamera);
+captureBtn?.addEventListener('click', capturePhoto);
+analyzeBtn?.addEventListener('click', startAnalysis);
+retakeBtn?.addEventListener('click', resetToUpload);
+
+// Bottom Nav Logic
+document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-target');
+        if (!targetId) return;
+
+        // Reset active state for nav
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+
+        // Switch screens
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+            s.classList.add('hidden');
+        });
+        
+        const targetScreen = document.getElementById(targetId);
+        targetScreen.classList.remove('hidden');
+        targetScreen.classList.add('active');
+    });
+});
 
 // Drag and Drop
-dropZone.addEventListener('dragover', (e) => {
+dropZone?.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('dragover');
 });
 
-dropZone.addEventListener('dragleave', () => {
+dropZone?.addEventListener('dragleave', () => {
     dropZone.classList.remove('dragover');
 });
 
-dropZone.addEventListener('drop', (e) => {
+dropZone?.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        handleFile(files[0]);
+    if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
     }
 });
 
 function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
+    if (e.target.files[0]) handleFile(e.target.files[0]);
 }
 
 function handleFile(file) {
@@ -58,7 +81,6 @@ function handleFile(file) {
         alert('画像ファイルを選択してください');
         return;
     }
-
     const reader = new FileReader();
     reader.onload = (e) => {
         previewImage.src = e.target.result;
@@ -70,13 +92,11 @@ function handleFile(file) {
 function showPreview() {
     dropZone.style.display = 'none';
     previewSection.classList.remove('hidden');
-    resultSection.classList.add('hidden');
 }
 
 function resetToUpload() {
     dropZone.style.display = 'block';
     previewSection.classList.add('hidden');
-    resultSection.classList.add('hidden');
     fileInput.value = '';
 }
 
@@ -89,7 +109,7 @@ async function openCamera() {
         cameraVideo.srcObject = currentStream;
         cameraModal.classList.remove('hidden');
     } catch (err) {
-        alert('カメラにアクセスできませんでした。HTTPSで接続しているか確認してください。');
+        alert('カメラにアクセスできませんでした。');
         console.error(err);
     }
 }
@@ -115,17 +135,15 @@ function capturePhoto() {
 
 // Analysis Functions
 function startAnalysis() {
-    // Show loading state
     analyzeBtn.disabled = true;
-    analyzeBtn.innerHTML = '<span class="btn-spinner"></span>分析中...';
+    analyzeBtn.innerHTML = '<span>分析中...</span>';
 
-    // Simulate analysis delay for UX
     setTimeout(() => {
         const result = analyzeImage();
         displayResults(result);
         analyzeBtn.disabled = false;
-        analyzeBtn.innerHTML = '<span class="btn-icon">✨</span>診断する';
-    }, 2000);
+        analyzeBtn.innerHTML = '<span>診断する</span>';
+    }, 1500);
 }
 
 function analyzeImage() {
@@ -133,30 +151,19 @@ function analyzeImage() {
     const ctx = canvas.getContext('2d');
     const img = previewImage;
 
-    // Set canvas size
     canvas.width = img.naturalWidth || img.width;
     canvas.height = img.naturalHeight || img.height;
-
-    // Draw image to canvas
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Sample skin color from face region (center area)
     const samples = getSkinSamples(ctx, canvas.width, canvas.height);
     const avgColor = averageColor(samples);
 
-    // Analyze undertone and brightness
     const hsl = rgbToHsl(avgColor.r, avgColor.g, avgColor.b);
     const undertone = analyzeUndertone(avgColor);
-    const brightness = hsl.l;
-
-    // Determine personal color type
-    const personalColorType = determineColorType(undertone, brightness, hsl);
+    const personalColorType = determineColorType(undertone, hsl.l, hsl);
 
     return {
         skinColor: avgColor,
-        hsl: hsl,
-        undertone: undertone,
-        brightness: brightness,
         type: personalColorType,
         data: PERSONAL_COLOR_DATA[personalColorType]
     };
@@ -164,244 +171,181 @@ function analyzeImage() {
 
 function getSkinSamples(ctx, width, height) {
     const samples = [];
-
-    // Sample from face region (assuming face is in center)
     const regions = [
-        { x: 0.45, y: 0.25 }, // Forehead left
-        { x: 0.55, y: 0.25 }, // Forehead right
-        { x: 0.35, y: 0.45 }, // Left cheek
-        { x: 0.65, y: 0.45 }, // Right cheek
-        { x: 0.5, y: 0.55 },  // Nose
-        { x: 0.4, y: 0.65 },  // Left jaw
-        { x: 0.6, y: 0.65 },  // Right jaw
+        { x: 0.5, y: 0.5 }, { x: 0.4, y: 0.5 }, { x: 0.6, y: 0.5 }
     ];
-
-    regions.forEach(region => {
-        const x = Math.floor(width * region.x);
-        const y = Math.floor(height * region.y);
-
-        // Sample a small area around each point
-        for (let dx = -5; dx <= 5; dx += 2) {
-            for (let dy = -5; dy <= 5; dy += 2) {
-                const px = Math.max(0, Math.min(width - 1, x + dx));
-                const py = Math.max(0, Math.min(height - 1, y + dy));
-                const data = ctx.getImageData(px, py, 1, 1).data;
-                samples.push({ r: data[0], g: data[1], b: data[2] });
-            }
-        }
+    regions.forEach(r => {
+        const x = Math.floor(width * r.x);
+        const y = Math.floor(height * r.y);
+        const data = ctx.getImageData(x, y, 1, 1).data;
+        samples.push({ r: data[0], g: data[1], b: data[2] });
     });
-
     return samples;
 }
 
 function averageColor(samples) {
-    // Filter out outliers (very dark or very light pixels)
-    const filtered = samples.filter(s => {
-        const brightness = (s.r + s.g + s.b) / 3;
-        return brightness > 50 && brightness < 230;
-    });
-
-    if (filtered.length === 0) {
-        return { r: 200, g: 170, b: 150 }; // Default skin tone
-    }
-
-    const sum = filtered.reduce((acc, s) => ({
-        r: acc.r + s.r,
-        g: acc.g + s.g,
-        b: acc.b + s.b
+    if (samples.length === 0) return { r: 200, g: 170, b: 150 };
+    const sum = samples.reduce((acc, s) => ({
+        r: acc.r + s.r, g: acc.g + s.g, b: acc.b + s.b
     }), { r: 0, g: 0, b: 0 });
-
     return {
-        r: Math.round(sum.r / filtered.length),
-        g: Math.round(sum.g / filtered.length),
-        b: Math.round(sum.b / filtered.length)
+        r: Math.round(sum.r / samples.length),
+        g: Math.round(sum.g / samples.length),
+        b: Math.round(sum.b / samples.length)
     };
 }
 
 function rgbToHsl(r, g, b) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
     let h, s, l = (max + min) / 2;
-
-    if (max === min) {
-        h = s = 0;
-    } else {
+    if (max === min) { h = s = 0; }
+    else {
         const d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
         switch (max) {
             case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
             case g: h = ((b - r) / d + 2) / 6; break;
             case b: h = ((r - g) / d + 4) / 6; break;
         }
     }
-
-    return { h: h * 360, s: s, l: l };
+    return { h: h * 360, s, l };
 }
 
 function analyzeUndertone(color) {
-    // Calculate yellow vs pink ratio
     const yellowIndex = color.r - color.b;
     const pinkIndex = color.r - color.g;
-
-    // Compare to typical yellow-base vs blue-base thresholds
-    // Yellow-base: more yellow/golden tones
-    // Blue-base: more pink/rosy tones
-
-    if (yellowIndex > 15 && pinkIndex < yellowIndex) {
-        return 'warm'; // イエローベース
-    } else if (pinkIndex > 10 || yellowIndex < 10) {
-        return 'cool'; // ブルーベース
-    } else {
-        // Neutral - determine by dominant undertone
-        return yellowIndex > pinkIndex ? 'warm' : 'cool';
-    }
+    if (yellowIndex > 15 && pinkIndex < yellowIndex) return 'warm';
+    else if (pinkIndex > 10 || yellowIndex < 10) return 'cool';
+    return yellowIndex > pinkIndex ? 'warm' : 'cool';
 }
 
 function determineColorType(undertone, brightness, hsl) {
-    // Spring: Warm + Bright (high lightness, high saturation)
-    // Summer: Cool + Soft (high lightness, low saturation)
-    // Autumn: Warm + Deep (low lightness, moderate saturation)
-    // Winter: Cool + Clear (varies lightness, high saturation/contrast)
-
     const isBright = brightness > 0.55;
     const isSaturated = hsl.s > 0.3;
+    if (undertone === 'warm') return isBright ? 'spring' : 'autumn';
+    return (isBright || !isSaturated) ? 'summer' : 'winter';
+}
 
-    if (undertone === 'warm') {
-        if (isBright) {
-            return 'spring';
-        } else {
-            return 'autumn';
-        }
-    } else {
-        if (isBright || !isSaturated) {
-            return 'summer';
-        } else {
-            return 'winter';
-        }
-    }
+function getSeasonBadgeText(type) {
+    const map = { spring: 'イエベ春', summer: 'ブルベ夏', autumn: 'イエベ秋', winter: 'ブルベ冬' };
+    return map[type] || type;
 }
 
 function displayResults(result) {
-    previewSection.classList.add('hidden');
-    resultSection.classList.remove('hidden');
+    // Switch to Result Screen
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('hidden');
+    });
+    resultScope.classList.remove('hidden');
+    resultScope.classList.add('active');
+    
+    // Ensure Color View is active
+    document.getElementById('colorResultView').classList.add('active');
+    document.getElementById('colorResultView').classList.remove('hidden');
+    document.getElementById('fashionResultView').classList.add('hidden');
+    document.getElementById('fashionResultView').classList.remove('active');
+    window.scrollTo(0, 0);
 
-    // Scroll to results
-    resultSection.scrollIntoView({ behavior: 'smooth' });
+    // Update Header
+    const appHeader = document.getElementById('appHeader');
+    if(appHeader) appHeader.classList.remove('hidden');
 
-    // Update result header
+    // Populate Data
+    document.getElementById('seasonBadge').textContent = getSeasonBadgeText(result.type);
     document.getElementById('resultType').textContent = result.data.name;
     document.getElementById('resultTypeEn').textContent = result.data.nameEn;
     document.getElementById('resultDescription').textContent = result.data.description;
     document.getElementById('resultUndertone').textContent = result.data.undertone;
 
-    // Update characteristics
     const charList = document.getElementById('characteristics');
     charList.innerHTML = result.data.characteristics.map(c => `<li>${c}</li>`).join('');
 
-    // Update detected skin color display
-    const skinColorDisplay = document.getElementById('detectedSkinColor');
-    skinColorDisplay.style.backgroundColor = `rgb(${result.skinColor.r}, ${result.skinColor.g}, ${result.skinColor.b})`;
-
-    // Update makeup colors
-    renderColorPalette('eyeshadowColors', result.data.makeup.eyeshadow);
-    renderColorPalette('cheekColors', result.data.makeup.cheek);
-    renderColorPalette('foundationColors', result.data.makeup.foundation);
-    renderColorPalette('eyelinerColors', result.data.makeup.eyeliner);
-    renderColorPalette('lipColors', result.data.makeup.lip);
-
-    // Update fashion colors
-    renderFashionColors('fashionBest', result.data.fashion.best);
-    renderFashionColors('fashionAvoid', result.data.fashion.avoid);
-
-    // Update hairstyle recommendations
-    if (result.data.hairstyle) {
-        document.getElementById('hairstyleDescription').textContent = result.data.hairstyle.description;
-        renderHairstyleList('hairstyleShort', result.data.hairstyle.short);
-        renderHairstyleList('hairstyleMedium', result.data.hairstyle.medium);
-        renderHairstyleList('hairstyleLong', result.data.hairstyle.long);
-    }
-
-    // Update hair color recommendations
+    renderMakeupCards(result.data, result.type);
+    
     if (result.data.hairColor) {
         document.getElementById('hairColorDescription').textContent = result.data.hairColor.description;
-        renderFashionColorsWithDesc('hairColorBest', result.data.hairColor.recommended);
-        renderFashionColorsWithDesc('hairColorAvoid', result.data.hairColor.avoid);
+        renderFashionColors('hairColorBest', result.data.hairColor.recommended);
     }
-
-    // Update accessories recommendations
-    if (result.data.accessories) {
-        document.getElementById('accessoriesDescription').textContent = result.data.accessories.description;
-        renderFashionColorsWithDesc('accessoriesMetals', result.data.accessories.metals);
-        renderFashionColorsWithDesc('accessoriesStones', result.data.accessories.stones);
-    }
-
-    // Update nail recommendations
-    if (result.data.nail) {
-        document.getElementById('nailDescription').textContent = result.data.nail.description;
-        renderFashionColorsWithDesc('nailColors', result.data.nail.recommended);
-    }
-
-    // Add animation to result cards
-    animateResultCards();
+    
+    renderFashionColors('fashionBest', result.data.fashion.best);
+    renderFashionColors('fashionAvoid', result.data.fashion.avoid);
 }
 
-function renderColorPalette(containerId, colors) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = colors.map(c => `
-        <div class="color-item">
-            <div class="color-swatch" style="background-color: ${c.color}"></div>
-            <div class="color-info">
-                <span class="color-name">${c.name}</span>
-                <span class="color-desc">${c.description}</span>
+function renderMakeupCards(resultData, typeId) {
+    const makeupList = document.getElementById('makeupPreviewList');
+    if (!makeupList) return;
+
+    const allMakeup = [
+        ...resultData.makeup.lip.map(m => ({...m, category: 'Lip'})),
+        ...resultData.makeup.eyeshadow.map(m => ({...m, category: 'Eye'})),
+        ...resultData.makeup.cheek.map(m => ({...m, category: 'Cheek'}))
+    ];
+    
+    makeupList.innerHTML = allMakeup.slice(0, 8).map(m => `
+        <div class="product-card card">
+            <div class="product-img-box">
+                <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
+                <button class="fav-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="product-info">
+                <span class="product-tag" style="background-color: var(--season-${typeId}); color: #000;">${getSeasonBadgeText(typeId)}</span>
+                <span class="product-name">${m.name}</span>
+                <span class="product-brand">${m.category} Item</span>
+                <span class="product-price">¥${Math.floor(Math.random() * 3 + 1)},${Math.floor(Math.random() * 8 + 1)}00</span>
             </div>
         </div>
     `).join('');
+
+    // Fav Toggle Logic
+    document.querySelectorAll('.fav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.currentTarget.classList.toggle('active');
+        });
+    });
 }
 
 function renderFashionColors(containerId, colors) {
     const container = document.getElementById(containerId);
+    if (!container) return;
     container.innerHTML = colors.map(c => `
-        <div class="fashion-color-item">
-            <div class="fashion-color-swatch" style="background-color: ${c.color}"></div>
-            <span class="fashion-color-name">${c.name}</span>
-        </div>
+        <div class="fashion-color-swatch flex-center" style="background-color: ${c.color}; width:40px; height:40px; border-radius:50%; display:inline-block; margin-right:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
     `).join('');
 }
 
-function renderHairstyleList(containerId, hairstyles) {
-    const container = document.getElementById(containerId);
-    if (!container || !hairstyles) return;
-    container.innerHTML = hairstyles.map(h => `
-        <div class="hairstyle-item">
-            <div class="hairstyle-name">${h.name}</div>
-            <div class="hairstyle-desc">${h.description}</div>
-        </div>
-    `).join('');
-}
+// Result Screen Transitions
+document.getElementById('viewFashionBtn')?.addEventListener('click', () => {
+    document.getElementById('colorResultView').classList.add('hidden');
+    document.getElementById('colorResultView').classList.remove('active');
+    document.getElementById('fashionResultView').classList.remove('hidden');
+    document.getElementById('fashionResultView').classList.add('active');
+    window.scrollTo(0, 0);
+});
 
-function renderFashionColorsWithDesc(containerId, colors) {
-    const container = document.getElementById(containerId);
-    if (!container || !colors) return;
-    container.innerHTML = colors.map(c => `
-        <div class="fashion-color-item" title="${c.description}">
-            <div class="fashion-color-swatch" style="background-color: ${c.color}"></div>
-            <span class="fashion-color-name">${c.name}</span>
-        </div>
-    `).join('');
-}
+document.getElementById('backToColorBtn')?.addEventListener('click', () => {
+    document.getElementById('fashionResultView').classList.add('hidden');
+    document.getElementById('fashionResultView').classList.remove('active');
+    document.getElementById('colorResultView').classList.remove('hidden');
+    document.getElementById('colorResultView').classList.add('active');
+    window.scrollTo(0, 0);
+});
 
-function animateResultCards() {
-    const cards = document.querySelectorAll('.result-card');
-    cards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.1}s`;
-        card.classList.add('fade-in-up');
+// Back btn from header roughly resets everything 
+document.getElementById('backBtn')?.addEventListener('click', () => {
+    resetToUpload();
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('hidden');
     });
-}
+    welcomeScreen.classList.remove('hidden');
+    welcomeScreen.classList.add('active');
+    document.getElementById('appHeader').classList.add('hidden');
 
-// Restart analysis
-document.getElementById('restartBtn')?.addEventListener('click', resetToUpload);
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector('.nav-item[data-target="welcomeScreen"]')?.classList.add('active');
+});

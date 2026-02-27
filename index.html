@@ -18,59 +18,63 @@
 </head>
 
 <body>
-    <!-- Background Effects -->
-    <div class="bg-effects">
-        <div class="bg-orb bg-orb-1"></div>
-        <div class="bg-orb bg-orb-2"></div>
-        <div class="bg-orb bg-orb-3"></div>
-    </div>
-
-    <div class="container">
-        <!-- Header -->
-        <header>
-            <div class="logo">
-                <div class="logo-icon">🎨</div>
-                <h1>パーソナルカラー診断</h1>
-            </div>
-            <p class="tagline">顔写真をアップロードして、あなたに最も似合う色を発見しましょう</p>
+    <!-- App Container (Mobile Wrapper) -->
+    <div class="app-container">
+        
+        <!-- Top App Bar -->
+        <header class="app-header hidden" id="appHeader">
+            <button class="icon-btn" id="backBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <h1 id="screenTitle">パーソナルカラー診断</h1>
+            <button class="icon-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="19" cy="12" r="1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="5" cy="12" r="1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </header>
 
-        <main>
-            <!-- Upload Section -->
-            <section class="upload-section glass-card" id="uploadSection">
-                <div class="drop-zone" id="dropZone">
-                    <span class="drop-zone-icon">📸</span>
-                    <h3>写真をアップロード</h3>
-                    <p>ドラッグ＆ドロップまたはボタンから選択</p>
-
-                    <div class="upload-buttons">
-                        <button class="btn btn-primary" id="browseBtn">
-                            <span class="btn-icon">📁</span>
-                            ファイルを選択
-                        </button>
-                        <button class="btn btn-secondary" id="cameraBtn">
-                            <span class="btn-icon">📷</span>
-                            カメラで撮影
-                        </button>
-                    </div>
-
-                    <input type="file" id="fileInput" accept="image/*" hidden>
+        <main class="app-content">
+            <!-- Welcome / Upload Section -->
+            <section class="screen active" id="welcomeScreen">
+                <div class="welcome-header">
+                    <h1 class="welcome-title">AIパーソナルカラー<br>＆骨格診断</h1>
+                    <p class="welcome-subtitle">あなたの魅力を最大限に引き出す</p>
                 </div>
+                
+                <div class="upload-area">
+                    <div class="drop-zone" id="dropZone">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3>写真をアップロードして診断</h3>
+                        <p>自然光の下で、ノーメイクでの撮影を推奨します</p>
 
-                <!-- Preview -->
-                <div class="preview-section hidden" id="previewSection">
-                    <div class="preview-container">
-                        <img id="previewImage" alt="プレビュー">
+                        <div class="upload-buttons">
+                            <button class="btn btn-primary btn-full" id="cameraBtn">
+                                <span>写真を撮影する</span>
+                            </button>
+                            <button class="btn btn-secondary btn-full" id="browseBtn">
+                                <span>アルバムから選ぶ</span>
+                            </button>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
                     </div>
-                    <div class="preview-actions">
-                        <button class="btn btn-secondary" id="retakeBtn">
-                            <span class="btn-icon">↩️</span>
-                            撮り直す
-                        </button>
-                        <button class="btn btn-primary" id="analyzeBtn">
-                            <span class="btn-icon">✨</span>
-                            診断する
-                        </button>
+
+                    <!-- Preview -->
+                    <div class="preview-section hidden" id="previewSection">
+                        <div class="preview-container">
+                            <img id="previewImage" alt="プレビュー">
+                        </div>
+                        <div class="preview-actions">
+                            <button class="btn btn-secondary" id="retakeBtn">撮り直す</button>
+                            <button class="btn btn-primary" id="analyzeBtn">診断する</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -80,225 +84,168 @@
                 <div class="camera-container">
                     <video id="cameraVideo" autoplay playsinline></video>
                     <div class="camera-controls">
-                        <button class="btn btn-secondary" id="closeCameraBtn">
-                            <span class="btn-icon">✕</span>
-                            閉じる
-                        </button>
-                        <button class="btn btn-primary" id="captureBtn">
-                            <span class="btn-icon">📸</span>
-                            撮影
-                        </button>
+                        <button class="btn btn-icon-large" id="closeCameraBtn">✕</button>
+                        <button class="btn btn-capture" id="captureBtn"></button>
                     </div>
                 </div>
             </div>
 
-            <!-- Results Section -->
-            <section class="result-section hidden" id="resultSection">
-                <!-- Result Header -->
-                <div class="result-header">
-                    <div class="result-type-badge">あなたのパーソナルカラー</div>
-                    <h2 class="result-type-name" id="resultType">スプリング</h2>
-                    <p class="result-type-en" id="resultTypeEn">Spring</p>
-                    <p class="result-description" id="resultDescription"></p>
-
-                    <div class="result-meta">
-                        <div class="meta-item">
-                            <span>🎨</span>
-                            <span id="resultUndertone">イエローベース</span>
-                        </div>
-                        <div class="meta-item">
-                            <span>検出した肌色:</span>
-                            <div class="detected-skin-color" id="detectedSkinColor"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Characteristics -->
-                <div class="result-card characteristics-card">
-                    <h3><span class="card-icon">✨</span>あなたの特徴</h3>
-                    <ul class="characteristics-list" id="characteristics"></ul>
-                </div>
-
-                <!-- Makeup Recommendations -->
-                <div class="result-grid">
-                    <h2 style="grid-column: 1 / -1; text-align: center; font-size: 1.8rem; margin-bottom: 10px;">
-                        💄 おすすめメイクカラー
-                    </h2>
-
-                    <div class="makeup-grid" style="grid-column: 1 / -1;">
-                        <!-- Eyeshadow -->
-                        <div class="result-card">
-                            <h3><span class="card-icon">👁️</span>アイシャドウ</h3>
-                            <div class="color-palette" id="eyeshadowColors"></div>
+            <!-- Results Section (Unified) -->
+            <section class="screen hidden" id="resultScope">
+                
+                <!-- 1. Color Result Screen -->
+                <div class="result-view active" id="colorResultView">
+                    <div class="result-hero card">
+                        <div class="season-badge" id="seasonBadge">ブルベ夏</div>
+                        <h2 class="result-title" id="resultType">サマー</h2>
+                        <p class="result-en" id="resultTypeEn">Summer</p>
+                        
+                        <div class="color-palette-preview">
+                            <div class="color-circle" style="background: #E8D3D8;"></div>
+                            <div class="color-circle" style="background: #AECDEA;"></div>
+                            <div class="color-circle" style="background: #D4E0D9;"></div>
+                            <div class="color-circle" style="background: #E6DAE6;"></div>
+                            <div class="color-circle" style="background: #E2DFE6;"></div>
                         </div>
 
-                        <!-- Cheek -->
-                        <div class="result-card">
-                            <h3><span class="card-icon">🌸</span>チーク</h3>
-                            <div class="color-palette" id="cheekColors"></div>
-                        </div>
-
-                        <!-- Foundation -->
-                        <div class="result-card">
-                            <h3><span class="card-icon">✨</span>ファンデーション</h3>
-                            <div class="color-palette" id="foundationColors"></div>
-                        </div>
-
-                        <!-- Eyeliner -->
-                        <div class="result-card">
-                            <h3><span class="card-icon">✏️</span>アイライン</h3>
-                            <div class="color-palette" id="eyelinerColors"></div>
-                        </div>
-
-                        <!-- Lip -->
-                        <div class="result-card">
-                            <h3><span class="card-icon">💋</span>リップ</h3>
-                            <div class="color-palette" id="lipColors"></div>
+                        <p class="result-desc" id="resultDescription">涼しげで柔らかい、エレガントな色が似合うタイプです。</p>
+                        
+                        <div class="meta-info">
+                            <div class="meta-tag">
+                                <span>ベース:</span> <strong id="resultUndertone">ブルーベース</strong>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Characteristics -->
+                    <div class="card">
+                        <h3>特徴</h3>
+                        <ul class="check-list" id="characteristics">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Makeup Recommendations (Detailed Cards) -->
+                    <div class="section-title">
+                        <h3>おすすめメイクアイテム</h3>
+                        <button class="text-link">すべて見る</button>
+                    </div>
+                    
+                    <div class="horizontal-scroll">
+                        <div class="product-cards" id="makeupPreviewList">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                    
+                     <!-- Hair Color Recommendations -->
+                     <div class="section-title" style="margin-top: 24px;">
+                        <h3>似合う髪色カタログ</h3>
+                     </div>
+                     <div class="card">
+                        <p id="hairColorDescription" class="card-desc"></p>
+                        <div class="fashion-colors" id="hairColorBest"></div>
+                     </div>
+                     
+                     <div class="action-area">
+                         <button class="btn btn-primary btn-full" id="viewFashionBtn">ファッションの診断を見る</button>
+                         <button class="btn btn-secondary btn-full" id="saveResultBtn" style="margin-top: 12px;">結果を保存する</button>
+                     </div>
                 </div>
 
-                <!-- Fashion Recommendations -->
-                <div class="result-card fashion-section" style="margin-top: 40px;">
-                    <h3><span class="card-icon">👗</span>おすすめファッションカラー</h3>
+                <!-- 2. Fashion/Skeleton Result Screen (accessed via button) -->
+                <div class="result-view hidden" id="fashionResultView">
+                    <div class="result-hero card">
+                        <div class="season-badge" id="skeletonBadge">WAVE TYPE</div>
+                        <h2 class="result-title">骨格ウェーブ</h2>
+                        <p class="result-desc">華奢で柔らかな曲線を描くボディライン。フェミニンなスタイルが得意です。</p>
+                    </div>
 
-                    <div class="fashion-subsection">
+                    <div class="section-title">
+                        <h3>得意な素材・アイテムガイド</h3>
+                    </div>
+                    
+                    <div class="card grid-2col" id="materialGrid">
+                       <!-- Populated via JS -->
+                    </div>
+
+                    <div class="section-title" style="margin-top: 24px;">
+                        <h3>おすすめファッションカラー</h3>
+                    </div>
+                    
+                    <div class="card">
                         <h4>✅ 似合う色</h4>
                         <div class="fashion-colors" id="fashionBest"></div>
-                    </div>
-
-                    <div class="fashion-subsection">
-                        <h4>⚠️ 避けたい色</h4>
+                        
+                        <h4 style="margin-top: 16px;">⚠️ 避けたい色</h4>
                         <div class="fashion-colors" id="fashionAvoid"></div>
                     </div>
-                </div>
-
-                <!-- Hairstyle Recommendations -->
-                <div class="result-card" style="margin-top: 40px;">
-                    <h3><span class="card-icon">💇</span>似合う髪型</h3>
-                    <p class="section-description" id="hairstyleDescription"></p>
-
-                    <div class="hairstyle-grid">
-                        <div class="hairstyle-category">
-                            <h4>✂️ ショート</h4>
-                            <div class="hairstyle-list" id="hairstyleShort"></div>
-                        </div>
-                        <div class="hairstyle-category">
-                            <h4>💫 ミディアム</h4>
-                            <div class="hairstyle-list" id="hairstyleMedium"></div>
-                        </div>
-                        <div class="hairstyle-category">
-                            <h4>🌟 ロング</h4>
-                            <div class="hairstyle-list" id="hairstyleLong"></div>
-                        </div>
+                    
+                    <div class="action-area">
+                        <button class="btn btn-secondary btn-full" id="backToColorBtn">カラー診断に戻る</button>
                     </div>
                 </div>
 
-                <!-- Hair Color Recommendations -->
-                <div class="result-card" style="margin-top: 24px;">
-                    <h3><span class="card-icon">🎨</span>似合う髪色</h3>
-                    <p class="section-description" id="hairColorDescription"></p>
+                <!-- Hidden sections from previous design kept for logic compatibility -->
+                <div class="hidden" id="eyeshadowColors"></div>
+                <div class="hidden" id="cheekColors"></div>
+                <div class="hidden" id="foundationColors"></div>
+                <div class="hidden" id="eyelinerColors"></div>
+                <div class="hidden" id="lipColors"></div>
+                <div class="hidden" id="hairstyleShort"></div>
+                <div class="hidden" id="hairstyleMedium"></div>
+                <div class="hidden" id="hairstyleLong"></div>
+                <div class="hidden" id="hairColorAvoid"></div>
+                <div class="hidden" id="accessoriesMetals"></div>
+                <div class="hidden" id="accessoriesStones"></div>
+                <div class="hidden" id="nailColors"></div>
 
-                    <div class="fashion-subsection">
-                        <h4>✅ おすすめカラー</h4>
-                        <div class="fashion-colors" id="hairColorBest"></div>
-                    </div>
-
-                    <div class="fashion-subsection">
-                        <h4>⚠️ 避けたい色</h4>
-                        <div class="fashion-colors" id="hairColorAvoid"></div>
-                    </div>
+            </section>
+            
+            <!-- Closet Screen -->
+            <section class="screen hidden" id="closetScreen">
+                <div class="closet-tabs">
+                    <button class="tab-btn active">メイク</button>
+                    <button class="tab-btn">ファッション</button>
+                </div>
+                
+                <div class="closet-toolbar">
+                    <span class="item-count">全 12 アイテム</span>
+                    <button class="sort-btn">登録順 <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2"/></svg></button>
                 </div>
 
-                <!-- Accessories Recommendations -->
-                <div class="result-card" style="margin-top: 24px;">
-                    <h3><span class="card-icon">💎</span>似合うアクセサリー</h3>
-                    <p class="section-description" id="accessoriesDescription"></p>
-
-                    <div class="fashion-subsection">
-                        <h4>🔗 メタル</h4>
-                        <div class="fashion-colors" id="accessoriesMetals"></div>
-                    </div>
-
-                    <div class="fashion-subsection">
-                        <h4>💠 ストーン</h4>
-                        <div class="fashion-colors" id="accessoriesStones"></div>
-                    </div>
-                </div>
-
-                <!-- Nail Recommendations -->
-                <div class="result-card" style="margin-top: 24px;">
-                    <h3><span class="card-icon">💅</span>似合うネイルカラー</h3>
-                    <p class="section-description" id="nailDescription"></p>
-                    <div class="fashion-colors" id="nailColors"></div>
-                </div>
-
-                <!-- Share & Save Section -->
-                <div class="result-card share-section" style="margin-top: 40px;">
-                    <h3><span class="card-icon">📤</span>結果をシェア・保存</h3>
-
-                    <div class="share-buttons">
-                        <button class="btn btn-share btn-twitter" id="shareTwitter">
-                            <span class="btn-icon">🐦</span>
-                            Twitter
-                        </button>
-                        <button class="btn btn-share btn-line" id="shareLine">
-                            <span class="btn-icon">💬</span>
-                            LINE
-                        </button>
-                        <button class="btn btn-share btn-copy" id="copyResult">
-                            <span class="btn-icon">📋</span>
-                            コピー
-                        </button>
-                        <button class="btn btn-primary" id="saveImage">
-                            <span class="btn-icon">💾</span>
-                            画像で保存
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Restart -->
-                <div class="restart-section">
-                    <button class="btn btn-secondary" id="restartBtn">
-                        <span class="btn-icon">🔄</span>
-                        もう一度診断する
-                    </button>
-                    <button class="btn btn-secondary" id="historyBtn" style="margin-left: 16px;">
-                        <span class="btn-icon">📜</span>
-                        履歴を見る
-                    </button>
+                <div class="product-grid" id="closetGrid">
+                    <!-- Populated via JS -->
                 </div>
             </section>
 
             <!-- Hidden Canvas for Analysis -->
-            <canvas id="analysisCanvas"></canvas>
+            <canvas id="analysisCanvas" class="hidden"></canvas>
         </main>
 
-        <footer>
-            <p>© 2026 パーソナルカラー診断アプリ | あなたの魅力を引き出す色を見つけよう</p>
-        </footer>
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-target="welcomeScreen">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>ホーム</span>
+            </button>
+            <button class="nav-item" data-target="resultScope">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                <span>診断</span>
+            </button>
+            <button class="nav-item" data-target="closetScreen">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                <span>クローゼット</span>
+            </button>
+            <button class="nav-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>設定</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- History Modal -->
-    <div class="modal hidden" id="historyModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>📜 診断履歴</h2>
-                <button class="btn-close" id="closeHistoryBtn">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="history-list" id="historyList">
-                    <p class="no-history">履歴がありません</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Language Switcher (floating) -->
-    <div class="lang-switcher">
-        <button class="lang-btn active" data-lang="ja">🇯🇵</button>
-        <button class="lang-btn" data-lang="en">🇺🇸</button>
-    </div>
+    <!-- History Modal & Lang Switcher Removed / Kept as simple hidden divs if needed by JS -->
+    <div class="modal hidden" id="historyModal"></div>
+    <div class="lang-switcher hidden"></div>
 
     <script type="module" src="app.js"></script>
 </body>

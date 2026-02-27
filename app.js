@@ -14,6 +14,7 @@ const closeCameraBtn = document.getElementById('closeCameraBtn');
 const welcomeScreen = document.getElementById('welcomeScreen');
 const resultScope = document.getElementById('resultScope');
 const closetScreen = document.getElementById('closetScreen');
+const settingsScreen = document.getElementById('settingsScreen');
 
 const previewSection = document.getElementById('previewSection');
 const previewImage = document.getElementById('previewImage');
@@ -22,6 +23,9 @@ const retakeBtn = document.getElementById('retakeBtn');
 const analysisCanvas = document.getElementById('analysisCanvas');
 
 let currentStream = null;
+let currentResult = null; // Store current analysis result
+const STORAGE_KEY_DIAGNOSIS = 'personal_color_diagnosis_result';
+const STORAGE_KEY_CLOSET = 'personal_color_closet_items';
 
 // Event Listeners
 browseBtn?.addEventListener('click', () => fileInput.click());
@@ -47,10 +51,37 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             s.classList.remove('active');
             s.classList.add('hidden');
         });
-        
-        const targetScreen = document.getElementById(targetId);
-        targetScreen.classList.remove('hidden');
-        targetScreen.classList.add('active');
+
+        // Special logic for Diagnosis tab
+        if (targetId === 'resultScope') {
+            const savedResultStr = localStorage.getItem(STORAGE_KEY_DIAGNOSIS);
+            if (savedResultStr) {
+                // If saved, load it
+                currentResult = JSON.parse(savedResultStr);
+                displayResults(currentResult, false); // false means don't show header back button
+            } else {
+                // Return to welcome if no result
+                document.getElementById('welcomeScreen').classList.remove('hidden');
+                document.getElementById('welcomeScreen').classList.add('active');
+                alert('まだ診断結果がありません。ホームから診断を行ってください。');
+                return;
+            }
+        } else if (targetId === 'closetScreen') {
+            renderCloset();
+            document.getElementById('closetScreen').classList.remove('hidden');
+            document.getElementById('closetScreen').classList.add('active');
+        } else {
+            const targetScreen = document.getElementById(targetId);
+            if (targetScreen) {
+                targetScreen.classList.remove('hidden');
+                targetScreen.classList.add('active');
+            }
+        }
+
+        // Ensure header is hidden on Home, Closet, Settings unless forced
+        if (['welcomeScreen', 'closetScreen', 'settingsScreen'].includes(targetId)) {
+            document.getElementById('appHeader').classList.add('hidden');
+        }
     });
 });
 
@@ -139,8 +170,8 @@ function startAnalysis() {
     analyzeBtn.innerHTML = '<span>分析中...</span>';
 
     setTimeout(() => {
-        const result = analyzeImage();
-        displayResults(result);
+        currentResult = analyzeImage();
+        displayResults(currentResult, true); // true = show back button
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = '<span>診断する</span>';
     }, 1500);
@@ -232,7 +263,7 @@ function getSeasonBadgeText(type) {
     return map[type] || type;
 }
 
-function displayResults(result) {
+function displayResults(result, showHeader = true) {
     // Switch to Result Screen
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
@@ -240,7 +271,7 @@ function displayResults(result) {
     });
     resultScope.classList.remove('hidden');
     resultScope.classList.add('active');
-    
+
     // Ensure Color View is active
     document.getElementById('colorResultView').classList.add('active');
     document.getElementById('colorResultView').classList.remove('hidden');
@@ -250,7 +281,15 @@ function displayResults(result) {
 
     // Update Header
     const appHeader = document.getElementById('appHeader');
-    if(appHeader) appHeader.classList.remove('hidden');
+    if (appHeader) {
+        if (showHeader) {
+            appHeader.classList.remove('hidden');
+            document.getElementById('backBtn').style.display = 'flex';
+        } else {
+            appHeader.classList.remove('hidden');
+            document.getElementById('backBtn').style.display = 'none'; // hide back if accessed from nav
+        }
+    }
 
     // Populate Data
     document.getElementById('seasonBadge').textContent = getSeasonBadgeText(result.type);
@@ -263,12 +302,12 @@ function displayResults(result) {
     charList.innerHTML = result.data.characteristics.map(c => `<li>${c}</li>`).join('');
 
     renderMakeupCards(result.data, result.type);
-    
+
     if (result.data.hairColor) {
         document.getElementById('hairColorDescription').textContent = result.data.hairColor.description;
         renderFashionColors('hairColorBest', result.data.hairColor.recommended);
     }
-    
+
     renderFashionColors('fashionBest', result.data.fashion.best);
     renderFashionColors('fashionAvoid', result.data.fashion.avoid);
 }
@@ -278,16 +317,30 @@ function renderMakeupCards(resultData, typeId) {
     if (!makeupList) return;
 
     const allMakeup = [
-        ...resultData.makeup.lip.map(m => ({...m, category: 'Lip'})),
-        ...resultData.makeup.eyeshadow.map(m => ({...m, category: 'Eye'})),
-        ...resultData.makeup.cheek.map(m => ({...m, category: 'Cheek'}))
+        ...resultData.makeup.lip.map(m => ({ ...m, category: 'Lip' })),
+        ...resultData.makeup.eyeshadow.map(m => ({ ...m, category: 'Eye' })),
+        ...resultData.makeup.cheek.map(m => ({ ...m, category: 'Cheek' }))
     ];
-    
-    makeupList.innerHTML = allMakeup.slice(0, 8).map(m => `
+
+    // Setup favorites logic and render UI state
+    let savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+
+    makeupList.innerHTML = allMakeup.slice(0, 8).map(m => {
+        const isFav = savedItems.some(item => item.name === m.name && item.color === m.color);
+        const favClass = isFav ? 'fav-btn active' : 'fav-btn';
+
+        return `
         <div class="product-card card">
             <div class="product-img-box">
                 <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
-                <button class="fav-btn">
+                <button class="${favClass}" data-item='${JSON.stringify({
+            name: m.name,
+            color: m.color,
+            category: m.category,
+            typeId: typeId,
+            typeBadge: getSeasonBadgeText(typeId),
+            price: Math.floor(Math.random() * 3 + 1) + "," + Math.floor(Math.random() * 8 + 1) + "00"
+        })}'>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
                     </svg>
@@ -300,12 +353,28 @@ function renderMakeupCards(resultData, typeId) {
                 <span class="product-price">¥${Math.floor(Math.random() * 3 + 1)},${Math.floor(Math.random() * 8 + 1)}00</span>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
-    // Fav Toggle Logic
-    document.querySelectorAll('.fav-btn').forEach(btn => {
+    // Fav Toggle Logic to Save to Storage
+    document.querySelectorAll('#makeupPreviewList .fav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.currentTarget.classList.toggle('active');
+            const btnEl = e.currentTarget;
+            btnEl.classList.toggle('active');
+
+            const itemData = JSON.parse(btnEl.getAttribute('data-item'));
+            let currentSaved = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+
+            if (btnEl.classList.contains('active')) {
+                // Add
+                if (!currentSaved.some(i => i.name === itemData.name && i.color === itemData.color)) {
+                    currentSaved.push({ ...itemData, tab: 'makeup' });
+                }
+            } else {
+                // Remove
+                currentSaved = currentSaved.filter(i => !(i.name === itemData.name && i.color === itemData.color));
+            }
+
+            localStorage.setItem(STORAGE_KEY_CLOSET, JSON.stringify(currentSaved));
         });
     });
 }
@@ -335,7 +404,7 @@ document.getElementById('backToColorBtn')?.addEventListener('click', () => {
     window.scrollTo(0, 0);
 });
 
-// Back btn from header roughly resets everything 
+// Back btn from header roughly resets everything if it's visible
 document.getElementById('backBtn')?.addEventListener('click', () => {
     resetToUpload();
     document.querySelectorAll('.screen').forEach(s => {
@@ -348,4 +417,78 @@ document.getElementById('backBtn')?.addEventListener('click', () => {
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector('.nav-item[data-target="welcomeScreen"]')?.classList.add('active');
+});
+
+// Save result logic
+document.getElementById('saveResultBtn')?.addEventListener('click', () => {
+    if (currentResult) {
+        localStorage.setItem(STORAGE_KEY_DIAGNOSIS, JSON.stringify(currentResult));
+        alert('診断結果を保存しました。クローゼットや診断タブからいつでも見られます。');
+    }
+});
+
+// Render Closet
+function renderCloset() {
+    const grid = document.getElementById('closetGrid');
+    const countEl = document.getElementById('closetItemCount');
+    if (!grid) return;
+
+    const savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+    const activeTabObj = document.querySelector('.closet-tabs .tab-btn.active');
+    const activeTab = activeTabObj ? activeTabObj.getAttribute('data-tab') : 'makeup';
+
+    // Fashion tab filter logic is empty for now as we only save makeup, but we support structure
+    let filteredItems = savedItems;
+    if (activeTab === 'makeup') {
+        filteredItems = savedItems.filter(i => i.tab === 'makeup');
+    } else {
+        filteredItems = savedItems.filter(i => i.tab === 'fashion');
+    }
+
+    countEl.textContent = `全 ${filteredItems.length} アイテム`;
+
+    if (filteredItems.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1 / -1; color: var(--text-secondary); text-align: center; padding: 40px 0;">アイテムがありません</p>';
+        return;
+    }
+
+    grid.innerHTML = filteredItems.map(m => `
+        <div class="product-card card" style="width:100%; min-width:unset;">
+            <div class="product-img-box">
+                <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
+                <button class="fav-btn active" data-item='${JSON.stringify(m)}'>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="product-info">
+                <span class="product-tag" style="background-color: var(--season-${m.typeId}); color: #000;">${m.typeBadge}</span>
+                <span class="product-name">${m.name}</span>
+                <span class="product-brand">${m.category} Item</span>
+                <span class="product-price">¥${m.price || '1,000'}</span>
+            </div>
+        </div>
+    `).join('');
+
+    // Remove from closet directly
+    document.querySelectorAll('#closetGrid .fav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const btnEl = e.currentTarget;
+            const itemData = JSON.parse(btnEl.getAttribute('data-item'));
+            let currentSaved = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+            currentSaved = currentSaved.filter(i => !(i.name === itemData.name && i.color === itemData.color));
+            localStorage.setItem(STORAGE_KEY_CLOSET, JSON.stringify(currentSaved));
+            renderCloset(); // Re-render immediately
+        });
+    });
+}
+
+// Closet Tab toggling
+document.querySelectorAll('.closet-tabs .tab-btn').forEach(tbtn => {
+    tbtn.addEventListener('click', (e) => {
+        document.querySelectorAll('.closet-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        renderCloset();
+    });
 });

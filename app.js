@@ -129,19 +129,11 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         });
 
         // Special logic for Diagnosis tab
-        if (targetId === 'resultScope') {
-            const savedResultStr = localStorage.getItem(STORAGE_KEY_DIAGNOSIS);
-            if (savedResultStr) {
-                // If saved, load it
-                currentResult = JSON.parse(savedResultStr);
-                displayResults(currentResult, false); // false means don't show header back button
-            } else {
-                // Return to welcome if no result
-                document.getElementById('welcomeScreen').classList.remove('hidden');
-                document.getElementById('welcomeScreen').classList.add('active');
-                alert('まだ診断結果がありません。ホームから診断を行ってください。');
-                return;
-            }
+        if (targetId === 'diagnosisHistoryScreen') {
+            renderHistoryList();
+            document.getElementById('diagnosisHistoryScreen').classList.remove('hidden');
+            document.getElementById('diagnosisHistoryScreen').classList.add('active');
+            document.getElementById('appHeader').classList.add('hidden');
         } else if (targetId === 'closetScreen') {
             renderCloset();
             document.getElementById('closetScreen').classList.remove('hidden');
@@ -744,24 +736,44 @@ textModal?.addEventListener('click', (e) => {
 
 // Back btn from header roughly resets everything if it's visible
 document.getElementById('backBtn')?.addEventListener('click', () => {
-    resetToUpload();
+    const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-target');
+
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.classList.add('hidden');
     });
-    welcomeScreen.classList.remove('hidden');
-    welcomeScreen.classList.add('active');
     document.getElementById('appHeader').classList.add('hidden');
 
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector('.nav-item[data-target="welcomeScreen"]')?.classList.add('active');
+    if (activeNav === 'diagnosisHistoryScreen') {
+        renderHistoryList();
+        document.getElementById('diagnosisHistoryScreen').classList.remove('hidden');
+        document.getElementById('diagnosisHistoryScreen').classList.add('active');
+    } else {
+        resetToUpload();
+        welcomeScreen.classList.remove('hidden');
+        welcomeScreen.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelector('.nav-item[data-target="welcomeScreen"]')?.classList.add('active');
+    }
 });
 
 // Save result logic
 document.getElementById('saveResultBtn')?.addEventListener('click', () => {
     if (currentResult) {
-        localStorage.setItem(STORAGE_KEY_DIAGNOSIS, JSON.stringify(currentResult));
-        alert('診断結果を保存しました。クローゼットや診断タブからいつでも見られます。');
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEY_DIAGNOSIS) || '[]');
+        const isDuplicate = history.some(h => Math.abs(h.id - currentResult.id) < 5000); // prevent double click
+        if (!currentResult.id) {
+            currentResult.id = Date.now();
+            currentResult.date = new Date().toLocaleDateString('ja-JP');
+        }
+
+        if (!isDuplicate) {
+            history.push(currentResult);
+            localStorage.setItem(STORAGE_KEY_DIAGNOSIS, JSON.stringify(history));
+            alert('診断結果を保存しました。診断タブの履歴からいつでも見られます。');
+        } else {
+            alert('既に保存されています。');
+        }
     }
 });
 
@@ -851,3 +863,87 @@ if (sortBtn) {
 
 // Ensure the profile greeting is correct initially
 updateProfileGreeting();
+
+// Render Diagnosis History
+function renderHistoryList() {
+    const container = document.getElementById('diagnosisHistoryContent');
+    if (!container) return;
+
+    let history = [];
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY_DIAGNOSIS);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+                history = parsed;
+            } else {
+                // Migrate legacy single object
+                history = [parsed];
+                parsed.id = Date.now();
+                parsed.date = new Date().toLocaleDateString('ja-JP');
+                localStorage.setItem(STORAGE_KEY_DIAGNOSIS, JSON.stringify(history));
+            }
+        }
+    } catch (e) {
+        console.error("Failed to parse history", e);
+    }
+
+    if (history.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" class="empty-icon" style="color:var(--text-secondary); margin-bottom:16px;">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p style="color:var(--text-secondary); margin-bottom: 24px;">まだ診断履歴がありません。<br>ホーム画面から写真をアップロードして診断を始めてください。</p>
+                <button class="btn btn-primary" onclick="document.querySelector('.nav-item[data-target=\\'welcomeScreen\\']').click();">診断を始める</button>
+            </div>
+        `;
+        return;
+    }
+
+    const sortedHistory = [...history].reverse();
+
+    container.innerHTML = sortedHistory.map(h => `
+        <div class="card history-card" style="margin-bottom: 16px; cursor: pointer; padding: 20px; border-left: 6px solid var(--season-${h.type}); position: relative;" data-id="${h.id || 0}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">${h.date || '----/--/--'}</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.3rem; font-weight: 700;">${h.data ? h.data.name : 'Unknown'}</h3>
+                    <p style="margin: 0; font-size: 1rem; color: var(--text-secondary);">${getSkeletonName(h.skeleton)}</p>
+                </div>
+                <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: white; margin-left: 2px;">
+                        <path d="M9 18l6-6-6-6"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.history-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const id = parseFloat(e.currentTarget.getAttribute('data-id'));
+            const selectedResult = history.find(h => h.id === id || (id === 0 && !h.id));
+            if (selectedResult) {
+                currentResult = selectedResult;
+                document.querySelectorAll('.screen').forEach(s => {
+                    s.classList.remove('active');
+                    s.classList.add('hidden');
+                });
+                displayResults(selectedResult, true); // true = show header so user can go back
+            }
+        });
+    });
+}
+
+function getSkeletonName(skeletonId) {
+    const map = {
+        'straight': '骨格ストレート',
+        'wave': '骨格ウェーブ',
+        'natural': '骨格ナチュラル'
+    };
+    return map[skeletonId] || '骨格未診断';
+}

@@ -1,4 +1,5 @@
 import { PERSONAL_COLOR_DATA, SKELETON_DATA } from './color-data.js';
+import * as storage from './storage.js';
 
 // DOM Elements
 const dropZone = document.getElementById('dropZone');
@@ -43,8 +44,6 @@ const analysisCanvas = document.getElementById('analysisCanvas');
 
 let currentStream = null;
 let currentResult = null; // Store current analysis result
-const STORAGE_KEY_DIAGNOSIS = 'personal_color_diagnosis_result';
-const STORAGE_KEY_CLOSET = 'personal_color_closet_items';
 let currentSortOrder = 'newest'; // Closet sort state
 
 // Load Face API models
@@ -511,7 +510,7 @@ function renderMakeupCards(resultData, typeId) {
     ];
 
     // Setup favorites logic and render UI state
-    let savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+    let savedItems = storage.getClosetItems();
 
     makeupList.innerHTML = allMakeup.slice(0, 8).map(m => {
         const isFav = savedItems.some(item => item.name === m.name && item.color === m.color);
@@ -550,7 +549,7 @@ function renderMakeupCards(resultData, typeId) {
             btnEl.classList.toggle('active');
 
             const itemData = JSON.parse(btnEl.getAttribute('data-item'));
-            let currentSaved = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+            let currentSaved = storage.getClosetItems();
 
             if (btnEl.classList.contains('active')) {
                 // Add
@@ -562,7 +561,7 @@ function renderMakeupCards(resultData, typeId) {
                 currentSaved = currentSaved.filter(i => !(i.name === itemData.name && i.color === itemData.color));
             }
 
-            localStorage.setItem(STORAGE_KEY_CLOSET, JSON.stringify(currentSaved));
+            storage.saveClosetItems(currentSaved);
         });
     });
 }
@@ -571,7 +570,7 @@ function renderFashionColors(containerId, colors, categoryName, typeId, isAvoid 
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+    let savedItems = storage.getClosetItems();
 
     container.innerHTML = colors.map(c => {
         if (isAvoid) {
@@ -607,7 +606,7 @@ function renderFashionColors(containerId, colors, categoryName, typeId, isAvoid 
                 btnEl.classList.toggle('active');
 
                 const itemData = JSON.parse(btnEl.getAttribute('data-item'));
-                let currentSaved = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+                let currentSaved = storage.getClosetItems();
 
                 if (btnEl.classList.contains('active')) {
                     if (!currentSaved.some(i => i.name === itemData.name && i.color === itemData.color)) {
@@ -617,7 +616,7 @@ function renderFashionColors(containerId, colors, categoryName, typeId, isAvoid 
                     currentSaved = currentSaved.filter(i => !(i.name === itemData.name && i.color === itemData.color));
                 }
 
-                localStorage.setItem(STORAGE_KEY_CLOSET, JSON.stringify(currentSaved));
+                storage.saveClosetItems(currentSaved);
             });
         });
     }
@@ -685,7 +684,7 @@ document.querySelectorAll('.settings-item').forEach(item => {
     item.addEventListener('click', () => {
         const settingType = item.getAttribute('data-setting');
         if (settingType === 'profile') {
-            const savedName = localStorage.getItem('user_profile_name') || '';
+            const savedName = storage.getProfileName() || '';
             const textModalTitle = document.getElementById('textModalTitle');
             const textModalBody = document.getElementById('textModalBody');
 
@@ -700,7 +699,7 @@ document.querySelectorAll('.settings-item').forEach(item => {
 
             document.getElementById('saveProfileBtn').addEventListener('click', () => {
                 const name = document.getElementById('profileNameInput').value;
-                localStorage.setItem('user_profile_name', name);
+                storage.setProfileName(name);
                 alert('プロフィールを保存しました。');
                 textModal.classList.add('hidden');
                 updateProfileGreeting();
@@ -715,7 +714,7 @@ document.querySelectorAll('.settings-item').forEach(item => {
 });
 
 function updateProfileGreeting() {
-    const savedName = localStorage.getItem('user_profile_name');
+    const savedName = storage.getProfileName();
     const titleEl = document.querySelector('.welcome-title');
     if (savedName && titleEl) {
         titleEl.innerHTML = `${savedName}さんの<br>AIパーソナルカラー<br>＆骨格診断`;
@@ -760,16 +759,7 @@ document.getElementById('backBtn')?.addEventListener('click', () => {
 // Save result logic
 document.getElementById('saveResultBtn')?.addEventListener('click', () => {
     if (currentResult) {
-        let history = JSON.parse(localStorage.getItem(STORAGE_KEY_DIAGNOSIS) || '[]');
-        const isDuplicate = history.some(h => Math.abs(h.id - currentResult.id) < 5000); // prevent double click
-        if (!currentResult.id) {
-            currentResult.id = Date.now();
-            currentResult.date = new Date().toLocaleDateString('ja-JP');
-        }
-
-        if (!isDuplicate) {
-            history.push(currentResult);
-            localStorage.setItem(STORAGE_KEY_DIAGNOSIS, JSON.stringify(history));
+        if (storage.saveDiagnosisResult(currentResult)) {
             alert('診断結果を保存しました。診断タブの履歴からいつでも見られます。');
         } else {
             alert('既に保存されています。');
@@ -783,7 +773,7 @@ function renderCloset() {
     const countEl = document.getElementById('closetItemCount');
     if (!grid) return;
 
-    const savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+    const savedItems = storage.getClosetItems();
     const activeTabObj = document.querySelector('.closet-tabs .tab-btn.active');
     const activeTab = activeTabObj ? activeTabObj.getAttribute('data-tab') : 'makeup';
 
@@ -832,9 +822,9 @@ function renderCloset() {
         btn.addEventListener('click', (e) => {
             const btnEl = e.currentTarget;
             const itemData = JSON.parse(btnEl.getAttribute('data-item'));
-            let currentSaved = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+            let currentSaved = storage.getClosetItems();
             currentSaved = currentSaved.filter(i => !(i.name === itemData.name && i.color === itemData.color));
-            localStorage.setItem(STORAGE_KEY_CLOSET, JSON.stringify(currentSaved));
+            storage.saveClosetItems(currentSaved);
             renderCloset(); // Re-render immediately
         });
     });
@@ -869,24 +859,7 @@ function renderHistoryList() {
     const container = document.getElementById('diagnosisHistoryContent');
     if (!container) return;
 
-    let history = [];
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY_DIAGNOSIS);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) {
-                history = parsed;
-            } else {
-                // Migrate legacy single object
-                history = [parsed];
-                parsed.id = Date.now();
-                parsed.date = new Date().toLocaleDateString('ja-JP');
-                localStorage.setItem(STORAGE_KEY_DIAGNOSIS, JSON.stringify(history));
-            }
-        }
-    } catch (e) {
-        console.error("Failed to parse history", e);
-    }
+    let history = storage.getDiagnosisHistory();
 
     if (history.length === 0) {
         container.innerHTML = `

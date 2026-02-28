@@ -47,10 +47,12 @@ let currentResult = null; // Store current analysis result
 let currentSortOrder = 'newest'; // Closet sort state
 
 // Load Face API models
+let faceApiLoaded = false;
 Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
     faceapi.nets.faceLandmark68Net.loadFromUri('./models')
 ]).then(() => {
+    faceApiLoaded = true;
     console.log("Face API models loaded successfully");
 }).catch(console.error);
 
@@ -266,8 +268,8 @@ async function analyzeImage() {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const img = previewImage;
 
-    // Scale down image to avoid iOS memory limits
-    const MAX_DIMENSION = 1000;
+    // Scale down image to avoid iOS memory limits and significantly speed up processing
+    const MAX_DIMENSION = 400; // Reduced from 1000 to 400 for mobile performance
     let width = img.naturalWidth || img.width;
     let height = img.naturalHeight || img.height;
 
@@ -287,30 +289,40 @@ async function analyzeImage() {
 
     let avgColor;
     try {
-        const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-        if (detection) {
-            const box = detection.detection.box;
-
-            // Sample points based on the bounding box for cheeks and forehead
-            const cheekL = { x: box.x + box.width * 0.25, y: box.y + box.height * 0.6 };
-            const cheekR = { x: box.x + box.width * 0.75, y: box.y + box.height * 0.6 };
-            const forehead = { x: box.x + box.width * 0.5, y: box.y + box.height * 0.2 };
-
-            const samples = [
-                getColorAtPoint(ctx, cheekL.x, cheekL.y, canvas.width, canvas.height),
-                getColorAtPoint(ctx, cheekR.x, cheekR.y, canvas.width, canvas.height),
-                getColorAtPoint(ctx, forehead.x, forehead.y, canvas.width, canvas.height)
-            ].filter(s => s !== null);
-
-            if (samples.length > 0) {
-                avgColor = averageColor(samples);
-                console.log("Face detected via AI. Used specific facial regions.");
-            } else {
-                throw new Error("Invalid sample points.");
-            }
-        } else {
-            console.warn("No face detected by AI. Falling back to center sampling.");
+        if (!faceApiLoaded) {
+            console.warn("Face API models are still loading or failed. Falling back to center sampling for speed.");
             avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
+        } else {
+            // Use smaller inputSize (e.g. 320 instead of default 416) for faster mobile detection
+            const detection = await faceapi.detectSingleFace(
+                canvas, // Use the resized canvas instead of original img
+                new faceapi.TinyFaceDetectorOptions({ inputSize: 320 })
+            ).withFaceLandmarks();
+
+            if (detection) {
+                const box = detection.detection.box;
+
+                // Sample points based on the bounding box for cheeks and forehead
+                const cheekL = { x: box.x + box.width * 0.25, y: box.y + box.height * 0.6 };
+                const cheekR = { x: box.x + box.width * 0.75, y: box.y + box.height * 0.6 };
+                const forehead = { x: box.x + box.width * 0.5, y: box.y + box.height * 0.2 };
+
+                const samples = [
+                    getColorAtPoint(ctx, cheekL.x, cheekL.y, canvas.width, canvas.height),
+                    getColorAtPoint(ctx, cheekR.x, cheekR.y, canvas.width, canvas.height),
+                    getColorAtPoint(ctx, forehead.x, forehead.y, canvas.width, canvas.height)
+                ].filter(s => s !== null);
+
+                if (samples.length > 0) {
+                    avgColor = averageColor(samples);
+                    console.log("Face detected via AI. Used specific facial regions.");
+                } else {
+                    throw new Error("Invalid sample points.");
+                }
+            } else {
+                console.warn("No face detected by AI. Falling back to center sampling.");
+                avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
+            }
         }
     } catch (e) {
         console.error("Face API processing error:", e);

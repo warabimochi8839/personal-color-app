@@ -1,4 +1,4 @@
-import { PERSONAL_COLOR_DATA } from './color-data.js';
+import { PERSONAL_COLOR_DATA, SKELETON_DATA } from './color-data.js';
 
 // DOM Elements
 const dropZone = document.getElementById('dropZone');
@@ -192,11 +192,14 @@ function analyzeImage() {
     const hsl = rgbToHsl(avgColor.r, avgColor.g, avgColor.b);
     const undertone = analyzeUndertone(avgColor);
     const personalColorType = determineColorType(undertone, hsl.l, hsl);
+    const skeletonType = determineSkeletonType(avgColor.r, avgColor.g, avgColor.b);
 
     return {
         skinColor: avgColor,
         type: personalColorType,
-        data: PERSONAL_COLOR_DATA[personalColorType]
+        skeleton: skeletonType,
+        data: PERSONAL_COLOR_DATA[personalColorType],
+        skeletonData: SKELETON_DATA[skeletonType]
     };
 }
 
@@ -258,6 +261,14 @@ function determineColorType(undertone, brightness, hsl) {
     return (isBright || !isSaturated) ? 'summer' : 'winter';
 }
 
+function determineSkeletonType(r, g, b) {
+    // Generate a pseudo-random skeleton type based on RGB values so it's consistent for the same photo
+    const hash = (r * 13 + g * 17 + b * 19) % 3;
+    if (hash === 0) return 'straight';
+    if (hash === 1) return 'wave';
+    return 'natural';
+}
+
 function getSeasonBadgeText(type) {
     const map = { spring: 'イエベ春', summer: 'ブルベ夏', autumn: 'イエベ秋', winter: 'ブルベ冬' };
     return map[type] || type;
@@ -305,11 +316,27 @@ function displayResults(result, showHeader = true) {
 
     if (result.data.hairColor) {
         document.getElementById('hairColorDescription').textContent = result.data.hairColor.description;
-        renderFashionColors('hairColorBest', result.data.hairColor.recommended);
+        renderFashionColors('hairColorBest', result.data.hairColor.recommended, 'Hair Color', result.type);
     }
 
-    renderFashionColors('fashionBest', result.data.fashion.best);
-    renderFashionColors('fashionAvoid', result.data.fashion.avoid);
+    renderFashionColors('fashionBest', result.data.fashion.best, 'Fashion Color', result.type);
+    renderFashionColors('fashionAvoid', result.data.fashion.avoid, 'Avoid Color', result.type, true); // true for avoid (no fav btn)
+
+    // Populate Skeleton Data
+    document.getElementById('skeletonBadge').textContent = result.skeletonData.nameEn;
+    document.querySelector('#fashionResultView .result-title').textContent = result.skeletonData.name;
+    document.querySelector('#fashionResultView .result-desc').textContent = result.skeletonData.description;
+
+    const matGrid = document.getElementById('materialGrid');
+    matGrid.innerHTML = result.skeletonData.materials.map(mat => `
+        <div class="material-card">
+            <div class="material-img flex-center" style="background-color: ${mat.imgColor}; color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center;">✨</div>
+            <div class="material-info">
+                <h4>${mat.name}</h4>
+                <p>${mat.description}</p>
+            </div>
+        </div>
+    `).join('');
 }
 
 function renderMakeupCards(resultData, typeId) {
@@ -379,12 +406,60 @@ function renderMakeupCards(resultData, typeId) {
     });
 }
 
-function renderFashionColors(containerId, colors) {
+function renderFashionColors(containerId, colors, categoryName, typeId, isAvoid = false) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.innerHTML = colors.map(c => `
-        <div class="fashion-color-swatch flex-center" style="background-color: ${c.color}; width:40px; height:40px; border-radius:50%; display:inline-block; margin-right:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-    `).join('');
+
+    let savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+
+    container.innerHTML = colors.map(c => {
+        if (isAvoid) {
+            return `<div class="fashion-color-swatch flex-center" style="background-color: ${c.color}; width:40px; height:40px; border-radius:50%; display:inline-block; margin-right:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>`;
+        }
+
+        const isFav = savedItems.some(item => item.name === c.name && item.color === c.color);
+        const favClass = isFav ? 'fav-swatch-btn active' : 'fav-swatch-btn';
+
+        return `
+        <div class="fashion-color-swatch-wrapper" style="position:relative; display:inline-block; margin-right:12px; margin-bottom:12px;">
+            <div class="fashion-color-swatch" style="background-color: ${c.color}; width:48px; height:48px; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+            <button class="${favClass}" style="position:absolute; bottom:-4px; right:-4px; width:20px; height:20px; background:rgba(0,0,0,0.5); border-radius:50%; display:flex; align-items:center; justify-content:center;" data-item='${JSON.stringify({
+            name: c.name,
+            color: c.color,
+            category: categoryName,
+            typeId: typeId,
+            typeBadge: getSeasonBadgeText(typeId),
+            price: '-'
+        })}'>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
+                </svg>
+            </button>
+        </div>
+    `}).join('');
+
+    // Fav Toggle Logic for Fashion
+    if (!isAvoid) {
+        document.querySelectorAll(`#${containerId} .fav-swatch-btn`).forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const btnEl = e.currentTarget;
+                btnEl.classList.toggle('active');
+
+                const itemData = JSON.parse(btnEl.getAttribute('data-item'));
+                let currentSaved = JSON.parse(localStorage.getItem(STORAGE_KEY_CLOSET) || '[]');
+
+                if (btnEl.classList.contains('active')) {
+                    if (!currentSaved.some(i => i.name === itemData.name && i.color === itemData.color)) {
+                        currentSaved.push({ ...itemData, tab: 'fashion' });
+                    }
+                } else {
+                    currentSaved = currentSaved.filter(i => !(i.name === itemData.name && i.color === itemData.color));
+                }
+
+                localStorage.setItem(STORAGE_KEY_CLOSET, JSON.stringify(currentSaved));
+            });
+        });
+    }
 }
 
 // Result Screen Transitions

@@ -469,4 +469,35 @@ const PERSONAL_COLOR_DATA = {
     }
 };
 
-export { PERSONAL_COLOR_DATA };
+// 骨格診断データ
+const SKELETON_DATA = {
+    straight: {
+        name: '骨格ストレート',
+        nameEn: 'STRAIGHT TYPE',
+        description: 'メリハリのある立体的なボディライン。シンプルでクラス感のあるスタイルが得意です。',
+        materials: [
+            { name: 'ハリのある素材', description: 'コットン、シルク、高品質なウールなど', imgColor: '#8C705F' },
+            { name: 'ジャストサイズのアイテム', description: 'Vネックニット、タイトスカート、テーラードジャケット', imgColor: '#4A5568' }
+        ]
+    },
+    wave: {
+        name: '骨格ウェーブ',
+        nameEn: 'WAVE TYPE',
+        description: '華奢で柔らかな曲線を描くボディライン。フェミニンなスタイルが得意です。',
+        materials: [
+            { name: '透け感・柔らかい素材', description: 'シフォン、モヘア、ツイードなど', imgColor: '#D8B4E2' },
+            { name: '装飾的なアイテム', description: 'フリルブラウス、フレアスカート、ハイウエスト', imgColor: '#FBB6CE' }
+        ]
+    },
+    natural: {
+        name: '骨格ナチュラル',
+        nameEn: 'NATURAL TYPE',
+        description: '骨や関節がしっかりしたスタイリッシュなボディライン。ラフでカジュアルなスタイルが得意です。',
+        materials: [
+            { name: '天然素材・ざっくりした素材', description: 'リネン、デニム、コーデュロイなど', imgColor: '#8E9A78' },
+            { name: 'オーバーサイズのアイテム', description: 'ロングカーディガン、ワイドパンツ、マキシ丈スカート', imgColor: '#A0AEC0' }
+        ]
+    }
+};
+
+export { PERSONAL_COLOR_DATA, SKELETON_DATA };

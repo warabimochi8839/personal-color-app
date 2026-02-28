@@ -15,6 +15,13 @@ const welcomeScreen = document.getElementById('welcomeScreen');
 const resultScope = document.getElementById('resultScope');
 const closetScreen = document.getElementById('closetScreen');
 const settingsScreen = document.getElementById('settingsScreen');
+const skeletonQuizScreen = document.getElementById('skeletonQuizScreen');
+
+// Quiz State
+let skeletonAnswers = { straight: 0, wave: 0, natural: 0 };
+let currentQuizStep = 1;
+const quizCards = document.querySelectorAll('.quiz-card');
+const quizBtns = document.querySelectorAll('.quiz-btn');
 
 // Header Dropdown Elements
 const menuBtn = document.getElementById('menuBtn');
@@ -231,9 +238,21 @@ function startAnalysis() {
 
     setTimeout(() => {
         currentResult = analyzeImage();
-        displayResults(currentResult, true); // true = show back button
+
+        // Hide screens and show skeleton quiz
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+            s.classList.add('hidden');
+        });
+        document.getElementById('appHeader').classList.add('hidden');
+
+        skeletonQuizScreen.classList.remove('hidden');
+        skeletonQuizScreen.classList.add('active');
+
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = '<span>診断する</span>';
+
+        startSkeletonQuiz();
     }, 1500);
 }
 
@@ -252,14 +271,11 @@ function analyzeImage() {
     const hsl = rgbToHsl(avgColor.r, avgColor.g, avgColor.b);
     const undertone = analyzeUndertone(avgColor);
     const personalColorType = determineColorType(undertone, hsl.l, hsl);
-    const skeletonType = determineSkeletonType(avgColor.r, avgColor.g, avgColor.b);
 
     return {
         skinColor: avgColor,
         type: personalColorType,
-        skeleton: skeletonType,
-        data: PERSONAL_COLOR_DATA[personalColorType],
-        skeletonData: SKELETON_DATA[skeletonType]
+        data: PERSONAL_COLOR_DATA[personalColorType]
     };
 }
 
@@ -321,17 +337,61 @@ function determineColorType(undertone, brightness, hsl) {
     return (isBright || !isSaturated) ? 'summer' : 'winter';
 }
 
-function determineSkeletonType(r, g, b) {
-    // Generate a pseudo-random skeleton type based on RGB values so it's consistent for the same photo
-    const hash = (r * 13 + g * 17 + b * 19) % 3;
-    if (hash === 0) return 'straight';
-    if (hash === 1) return 'wave';
-    return 'natural';
-}
-
 function getSeasonBadgeText(type) {
     const map = { spring: 'イエベ春', summer: 'ブルベ夏', autumn: 'イエベ秋', winter: 'ブルベ冬' };
     return map[type] || type;
+}
+
+// Skeleton Quiz Logic
+function startSkeletonQuiz() {
+    skeletonAnswers = { straight: 0, wave: 0, natural: 0 };
+    currentQuizStep = 1;
+    showQuizStep(currentQuizStep);
+}
+
+function showQuizStep(step) {
+    quizCards.forEach((card, idx) => {
+        if (idx === step - 1) {
+            card.classList.remove('hidden');
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+            card.classList.add('hidden');
+        }
+    });
+}
+
+quizBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const ans = e.target.getAttribute('data-ans');
+        if (ans) {
+            skeletonAnswers[ans]++;
+            currentQuizStep++;
+
+            if (currentQuizStep <= 3) {
+                showQuizStep(currentQuizStep);
+            } else {
+                finishSkeletonQuiz();
+            }
+        }
+    });
+});
+
+function finishSkeletonQuiz() {
+    let maxVal = -1;
+    let resultType = 'straight';
+    for (const [key, val] of Object.entries(skeletonAnswers)) {
+        if (val > maxVal) {
+            maxVal = val;
+            resultType = key;
+        }
+    }
+
+    currentResult.skeleton = resultType;
+    currentResult.skeletonData = SKELETON_DATA[resultType];
+
+    // Proceed to results
+    displayResults(currentResult, true);
 }
 
 function displayResults(result, showHeader = true) {

@@ -694,6 +694,54 @@ a {
     gap: 16px;
 }
 
+/* Skeleton Quiz Styles */
+.quiz-container {
+    padding: 0 16px;
+    margin-top: 24px;
+}
+
+.quiz-card {
+    text-align: center;
+    padding: 32px 16px;
+    transition: var(--transition);
+}
+
+.quiz-question {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quiz-btn {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.quiz-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--text-secondary);
+}
+
+.quiz-btn:active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
 /* Camera Modal */
 .camera-modal {
     position: fixed;

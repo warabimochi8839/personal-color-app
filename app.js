@@ -45,6 +45,7 @@ let currentStream = null;
 let currentResult = null; // Store current analysis result
 const STORAGE_KEY_DIAGNOSIS = 'personal_color_diagnosis_result';
 const STORAGE_KEY_CLOSET = 'personal_color_closet_items';
+let currentSortOrder = 'newest'; // Closet sort state
 
 // Load Face API models
 Promise.all([
@@ -691,13 +692,45 @@ const settingsData = {
 document.querySelectorAll('.settings-item').forEach(item => {
     item.addEventListener('click', () => {
         const settingType = item.getAttribute('data-setting');
-        if (settingsData[settingType] && textModal) {
+        if (settingType === 'profile') {
+            const savedName = localStorage.getItem('user_profile_name') || '';
+            const textModalTitle = document.getElementById('textModalTitle');
+            const textModalBody = document.getElementById('textModalBody');
+
+            textModalTitle.textContent = 'プロフィール編集';
+            textModalBody.innerHTML = `
+                <div class="profile-form">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem;">ニックネーム</label>
+                    <input type="text" id="profileNameInput" value="${savedName}" placeholder="お名前を入力" class="input-field" style="width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 24px; border-radius: 8px; border: 1px solid #444; background: #222; color: white;">
+                    <button class="btn btn-primary btn-full" id="saveProfileBtn">保存する</button>
+                </div>
+            `;
+
+            document.getElementById('saveProfileBtn').addEventListener('click', () => {
+                const name = document.getElementById('profileNameInput').value;
+                localStorage.setItem('user_profile_name', name);
+                alert('プロフィールを保存しました。');
+                textModal.classList.add('hidden');
+                updateProfileGreeting();
+            });
+            textModal.classList.remove('hidden');
+        } else if (settingsData[settingType] && textModal) {
             textModalTitle.textContent = settingsData[settingType].title;
             textModalBody.innerHTML = settingsData[settingType].content;
             textModal.classList.remove('hidden');
         }
     });
 });
+
+function updateProfileGreeting() {
+    const savedName = localStorage.getItem('user_profile_name');
+    const titleEl = document.querySelector('.welcome-title');
+    if (savedName && titleEl) {
+        titleEl.innerHTML = `${savedName}さんの<br>AIパーソナルカラー<br>＆骨格診断`;
+    } else if (titleEl) {
+        titleEl.innerHTML = 'AIパーソナルカラー<br>＆骨格診断';
+    }
+}
 
 closeTextModalBtn?.addEventListener('click', () => {
     textModal.classList.add('hidden');
@@ -742,7 +775,7 @@ function renderCloset() {
     const activeTabObj = document.querySelector('.closet-tabs .tab-btn.active');
     const activeTab = activeTabObj ? activeTabObj.getAttribute('data-tab') : 'makeup';
 
-    // Fashion tab filter logic is empty for now as we only save makeup, but we support structure
+    // Filter logic
     let filteredItems = savedItems;
     if (activeTab === 'makeup') {
         filteredItems = savedItems.filter(i => i.tab === 'makeup');
@@ -757,7 +790,13 @@ function renderCloset() {
         return;
     }
 
-    grid.innerHTML = filteredItems.map(m => `
+    // Sort logic
+    let displayItems = [...filteredItems];
+    if (currentSortOrder === 'newest') {
+        displayItems.reverse();
+    }
+
+    grid.innerHTML = displayItems.map(m => `
         <div class="product-card card" style="width:100%; min-width:unset;">
             <div class="product-img-box">
                 <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
@@ -797,3 +836,18 @@ document.querySelectorAll('.closet-tabs .tab-btn').forEach(tbtn => {
         renderCloset();
     });
 });
+
+// Closet sort btn setup
+const sortBtn = document.querySelector('.sort-btn');
+if (sortBtn) {
+    const iconSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2"/></svg>';
+    sortBtn.innerHTML = `新しい順 ${iconSvg}`;
+    sortBtn.addEventListener('click', () => {
+        currentSortOrder = currentSortOrder === 'newest' ? 'oldest' : 'newest';
+        sortBtn.innerHTML = currentSortOrder === 'newest' ? `新しい順 ${iconSvg}` : `古い順 ${iconSvg}`;
+        renderCloset();
+    });
+}
+
+// Ensure the profile greeting is correct initially
+updateProfileGreeting();

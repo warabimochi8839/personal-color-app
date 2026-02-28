@@ -46,6 +46,14 @@ let currentResult = null; // Store current analysis result
 const STORAGE_KEY_DIAGNOSIS = 'personal_color_diagnosis_result';
 const STORAGE_KEY_CLOSET = 'personal_color_closet_items';
 
+// Load Face API models
+Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+    faceapi.nets.faceLandmark68Net.loadFromUri('./models')
+]).then(() => {
+    console.log("Face API models loaded successfully");
+}).catch(console.error);
+
 // Event Listeners
 browseBtn?.addEventListener('click', () => fileInput.click());
 fileInput?.addEventListener('change', handleFileSelect);
@@ -232,12 +240,12 @@ function capturePhoto() {
 }
 
 // Analysis Functions
-function startAnalysis() {
+async function startAnalysis() {
     analyzeBtn.disabled = true;
     analyzeBtn.innerHTML = '<span>分析中...</span>';
 
-    setTimeout(() => {
-        currentResult = analyzeImage();
+    try {
+        currentResult = await analyzeImage();
 
         // Hide screens and show skeleton quiz
         document.querySelectorAll('.screen').forEach(s => {
@@ -253,20 +261,54 @@ function startAnalysis() {
         analyzeBtn.innerHTML = '<span>診断する</span>';
 
         startSkeletonQuiz();
-    }, 1500);
+    } catch (error) {
+        console.error("Analysis failed:", error);
+        alert('画像の解析に失敗しました。別の写真をお試しください。');
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '<span>診断する</span>';
+    }
 }
 
-function analyzeImage() {
+async function analyzeImage() {
     const canvas = analysisCanvas;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const img = previewImage;
 
     canvas.width = img.naturalWidth || img.width;
     canvas.height = img.naturalHeight || img.height;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    const samples = getSkinSamples(ctx, canvas.width, canvas.height);
-    const avgColor = averageColor(samples);
+    let avgColor;
+    try {
+        const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+        if (detection) {
+            const box = detection.detection.box;
+
+            // Sample points based on the bounding box for cheeks and forehead
+            const cheekL = { x: box.x + box.width * 0.25, y: box.y + box.height * 0.6 };
+            const cheekR = { x: box.x + box.width * 0.75, y: box.y + box.height * 0.6 };
+            const forehead = { x: box.x + box.width * 0.5, y: box.y + box.height * 0.2 };
+
+            const samples = [
+                getColorAtPoint(ctx, cheekL.x, cheekL.y, canvas.width, canvas.height),
+                getColorAtPoint(ctx, cheekR.x, cheekR.y, canvas.width, canvas.height),
+                getColorAtPoint(ctx, forehead.x, forehead.y, canvas.width, canvas.height)
+            ].filter(s => s !== null);
+
+            if (samples.length > 0) {
+                avgColor = averageColor(samples);
+                console.log("Face detected via AI. Used specific facial regions.");
+            } else {
+                throw new Error("Invalid sample points.");
+            }
+        } else {
+            console.warn("No face detected by AI. Falling back to center sampling.");
+            avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
+        }
+    } catch (e) {
+        console.error("Face API processing error:", e);
+        avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
+    }
 
     const hsl = rgbToHsl(avgColor.r, avgColor.g, avgColor.b);
     const undertone = analyzeUndertone(avgColor);
@@ -277,6 +319,12 @@ function analyzeImage() {
         type: personalColorType,
         data: PERSONAL_COLOR_DATA[personalColorType]
     };
+}
+
+function getColorAtPoint(ctx, x, y, maxWidth, maxHeight) {
+    if (x < 0 || y < 0 || x >= maxWidth || y >= maxHeight) return null;
+    const data = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+    return { r: data[0], g: data[1], b: data[2] };
 }
 
 function getSkinSamples(ctx, width, height) {

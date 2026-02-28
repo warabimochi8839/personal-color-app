@@ -30,7 +30,7 @@
                 </svg>
             </button>
             <h1 id="screenTitle">パーソナルカラー診断</h1>
-            <button class="icon-btn">
+            <button class="icon-btn" id="menuBtn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="5" cy="12" r="2" fill="white" />
                     <circle cx="12" cy="12" r="2" fill="white" />
@@ -38,6 +38,25 @@
                 </svg>
             </button>
         </header>
+
+        <!-- Header Dropdown Menu -->
+        <div class="header-dropdown hidden" id="headerDropdown">
+            <button class="dropdown-item" id="shareBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+                シェアする
+            </button>
+            <button class="dropdown-item" id="restartBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                診断をやり直す
+            </button>
+        </div>
 
         <main class="app-content">
             <!-- Welcome / Upload Section -->
@@ -238,21 +257,21 @@
                 </div>
 
                 <div class="card" style="padding: 0; overflow: hidden;">
-                    <ul class="settings-list">
-                        <li class="settings-item">プロフィール編集<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2">
+                    <ul class="settings-list" id="settingsList">
+                        <li class="settings-item" data-setting="profile">プロフィール編集<svg width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg></li>
-                        <li class="settings-item">使い方ガイド<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2">
+                        <li class="settings-item" data-setting="guide">使い方ガイド<svg width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg></li>
-                        <li class="settings-item">利用規約<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2">
+                        <li class="settings-item" data-setting="tos">利用規約<svg width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg></li>
-                        <li class="settings-item">プライバシーポリシー<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2">
+                        <li class="settings-item" data-setting="privacy">プライバシーポリシー<svg width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg></li>
                     </ul>
@@ -302,9 +321,18 @@
         </nav>
     </div>
 
-    <!-- History Modal & Lang Switcher Removed / Kept as simple hidden divs if needed by JS -->
-    <div class="modal hidden" id="historyModal"></div>
-    <div class="lang-switcher hidden"></div>
+    <!-- Text Modal for Settings -->
+    <div class="text-modal hidden" id="textModal">
+        <div class="text-modal-content card">
+            <div class="text-modal-header">
+                <h3 id="textModalTitle">タイトル</h3>
+                <button class="icon-btn" id="closeTextModalBtn">✕</button>
+            </div>
+            <div class="text-modal-body" id="textModalBody">
+                ここにテキスト本文が入ります。
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="app.js"></script>
 </body>

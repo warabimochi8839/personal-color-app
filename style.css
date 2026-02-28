@@ -125,6 +125,51 @@ a {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Header Dropdown Menu */
+.header-dropdown {
+    position: fixed;
+    top: 60px;
+    right: max(16px, calc(50vw - calc(var(--app-max-width) / 2) + 16px));
+    background-color: rgba(40, 40, 40, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 0;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+    transform-origin: top right;
+    animation: scaleIn 0.2s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.dropdown-item:hover,
+.dropdown-item:active {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
 /* Main Content Area */
 .app-content {
     flex: 1;
@@ -795,6 +840,61 @@ a {
 
 .settings-item svg {
     color: var(--text-secondary);
+}
+
+/* Text Modal (Settings) */
+.text-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 200;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.text-modal-content {
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.text-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.text-modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.text-modal-body {
+    padding: 20px 16px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.text-modal-body h4 {
+    color: var(--text-primary);
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.text-modal-body p {
+    margin-bottom: 12px;
 }
 
 /* Utilities */

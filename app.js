@@ -16,6 +16,18 @@ const resultScope = document.getElementById('resultScope');
 const closetScreen = document.getElementById('closetScreen');
 const settingsScreen = document.getElementById('settingsScreen');
 
+// Header Dropdown Elements
+const menuBtn = document.getElementById('menuBtn');
+const headerDropdown = document.getElementById('headerDropdown');
+const shareBtn = document.getElementById('shareBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+// Text Modal Elements
+const textModal = document.getElementById('textModal');
+const closeTextModalBtn = document.getElementById('closeTextModalBtn');
+const textModalTitle = document.getElementById('textModalTitle');
+const textModalBody = document.getElementById('textModalBody');
+
 const previewSection = document.getElementById('previewSection');
 const previewImage = document.getElementById('previewImage');
 const analyzeBtn = document.getElementById('analyzeBtn');
@@ -35,6 +47,54 @@ closeCameraBtn?.addEventListener('click', closeCamera);
 captureBtn?.addEventListener('click', capturePhoto);
 analyzeBtn?.addEventListener('click', startAnalysis);
 retakeBtn?.addEventListener('click', resetToUpload);
+
+// Header Dropdown Logic
+menuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    headerDropdown.classList.toggle('hidden');
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (headerDropdown && !headerDropdown.contains(e.target) && e.target !== menuBtn) {
+        headerDropdown.classList.add('hidden');
+    }
+});
+
+shareBtn?.addEventListener('click', () => {
+    headerDropdown.classList.add('hidden');
+    // Implement actual share functionality here if needed
+    if (navigator.share) {
+        navigator.share({
+            title: 'パーソナルカラー診断',
+            text: '私のパーソナルカラーと骨格タイプを診断しました！',
+            url: window.location.href,
+        }).catch(console.error);
+    } else {
+        alert('このブラウザではシェア機能がサポートされていません。\nURLをコピーしてシェアしてください。');
+    }
+});
+
+restartBtn?.addEventListener('click', () => {
+    headerDropdown.classList.add('hidden');
+    // Clear context and return to home
+    if (fileInput) fileInput.value = '';
+    if (previewImage) previewImage.src = '';
+    if (previewSection) previewSection.classList.add('hidden');
+
+    // Reset back to welcome screen and hide header
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('hidden');
+    });
+    welcomeScreen.classList.remove('hidden');
+    welcomeScreen.classList.add('active');
+    document.getElementById('appHeader').classList.add('hidden');
+
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector('.nav-item[data-target="welcomeScreen"]')?.classList.add('active');
+    resetToUpload();
+});
 
 // Bottom Nav Logic
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -477,6 +537,68 @@ document.getElementById('backToColorBtn')?.addEventListener('click', () => {
     document.getElementById('colorResultView').classList.remove('hidden');
     document.getElementById('colorResultView').classList.add('active');
     window.scrollTo(0, 0);
+});
+
+// Settings Modal Logic
+const settingsData = {
+    profile: {
+        title: 'プロフィール編集',
+        content: `
+            <h4>ユーザー情報</h4>
+            <p>※ 現在、プロフィール編集機能は準備中です。今後のアップデートをお待ちください。</p>
+            <p>診断履歴は端末内に保存されています。キャッシュをクリアするとデータが消失する場合がありますのでご注意ください。</p>
+        `
+    },
+    guide: {
+        title: '使い方ガイド',
+        content: `
+            <h4>1. 写真をアップロード</h4>
+            <p>なるべく自然光の下で、ノーメイクの状態で撮影した顔写真をアップロードしてください。</p>
+            <h4>2. 診断結果を確認</h4>
+            <p>AIが写真の色情報を解析し、あなたのパーソナルカラーと骨格タイプ（疑似判定）を導き出します。</p>
+            <h4>3. クローゼットに保存</h4>
+            <p>おすすめのメイクアイテムやファッションカラーのスウォッチにある「♡」をタップして、クローゼットに保存できます。</p>
+        `
+    },
+    tos: {
+        title: '利用規約',
+        content: `
+            <h4>第1条（適用）</h4>
+            <p>本規約は、ユーザーと当アプリとの間の、本サービスの利用に関わる一切の関係に適用されます。</p>
+            <h4>第2条（禁止事項）</h4>
+            <p>ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。<br>・法令または公序良俗に違反する行為<br>・犯罪行為に関連する行為</p>
+        `
+    },
+    privacy: {
+        title: 'プライバシーポリシー',
+        content: `
+            <h4>個人情報の取り扱い</h4>
+            <p>当アプリは、アップロードされた画像をサーバーに送信・保存することはありません。すべての画像解析はユーザーの端末内（ブラウザ）で完結します。</p>
+            <h4>データの保存について</h4>
+            <p>診断結果やクローゼットのアイテムは、ブラウザの localStorage を利用して端末内に保存されます。</p>
+        `
+    }
+};
+
+document.querySelectorAll('.settings-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const settingType = item.getAttribute('data-setting');
+        if (settingsData[settingType] && textModal) {
+            textModalTitle.textContent = settingsData[settingType].title;
+            textModalBody.innerHTML = settingsData[settingType].content;
+            textModal.classList.remove('hidden');
+        }
+    });
+});
+
+closeTextModalBtn?.addEventListener('click', () => {
+    textModal.classList.add('hidden');
+});
+
+textModal?.addEventListener('click', (e) => {
+    if (e.target === textModal) {
+        textModal.classList.add('hidden');
+    }
 });
 
 // Back btn from header roughly resets everything if it's visible

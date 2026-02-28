@@ -202,7 +202,7 @@ function resetToUpload() {
 async function openCamera() {
     try {
         currentStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+            video: { facingMode: 'user' }
         });
         cameraVideo.srcObject = currentStream;
         cameraModal.classList.remove('hidden');
@@ -266,8 +266,23 @@ async function analyzeImage() {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const img = previewImage;
 
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
+    // Scale down image to avoid iOS memory limits
+    const MAX_DIMENSION = 1000;
+    let width = img.naturalWidth || img.width;
+    let height = img.naturalHeight || img.height;
+
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+            height = Math.floor(height * (MAX_DIMENSION / width));
+            width = MAX_DIMENSION;
+        } else {
+            width = Math.floor(width * (MAX_DIMENSION / height));
+            height = MAX_DIMENSION;
+        }
+    }
+
+    canvas.width = width;
+    canvas.height = height;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     let avgColor;

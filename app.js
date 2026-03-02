@@ -268,10 +268,23 @@ async function analyzeImage() {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const img = previewImage;
 
+    // Ensure image is fully loaded to prevent 0px canvas issues on certain devices
+    if (!img.complete || img.naturalWidth === 0) {
+        await new Promise(resolve => {
+            const onloadObj = () => { img.removeEventListener('load', onloadObj); resolve(); };
+            img.addEventListener('load', onloadObj);
+            setTimeout(resolve, 2000); // 2s max wait
+        });
+    }
+
     // Scale down image to avoid iOS memory limits and significantly speed up processing
     const MAX_DIMENSION = 400; // Reduced from 1000 to 400 for mobile performance
-    let width = img.naturalWidth || img.width;
-    let height = img.naturalHeight || img.height;
+    let width = img.naturalWidth || img.width || 400;
+    let height = img.naturalHeight || img.height || 400;
+
+    if (width === 0 || height === 0) {
+        throw new Error("Invalid image dimensions.");
+    }
 
     if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
         if (width > height) {
@@ -294,10 +307,17 @@ async function analyzeImage() {
             avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
         } else {
             // Use smaller inputSize (e.g. 320 instead of default 416) for faster mobile detection
-            const detection = await faceapi.detectSingleFace(
+            const detectPromise = faceapi.detectSingleFace(
                 canvas, // Use the resized canvas instead of original img
                 new faceapi.TinyFaceDetectorOptions({ inputSize: 320 })
             ).withFaceLandmarks();
+
+            // Implement a 3-second timeout protection in case WebGL backend hangs indefinitely on mobile
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Face API Timeout')), 3000);
+            });
+
+            const detection = await Promise.race([detectPromise, timeoutPromise]);
 
             if (detection) {
                 const box = detection.detection.box;

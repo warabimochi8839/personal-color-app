@@ -46,15 +46,8 @@ let currentStream = null;
 let currentResult = null; // Store current analysis result
 let currentSortOrder = 'newest'; // Closet sort state
 
-// Load Face API models
-let faceApiLoaded = false;
-Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
-    faceapi.nets.faceLandmark68Net.loadFromUri('./models')
-]).then(() => {
-    faceApiLoaded = true;
-    console.log("Face API models loaded successfully");
-}).catch(console.error);
+// Removed face-api load
+
 
 // Event Listeners
 browseBtn?.addEventListener('click', () => fileInput.click());
@@ -300,54 +293,8 @@ async function analyzeImage() {
     canvas.height = height;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    let avgColor;
-    try {
-        if (!faceApiLoaded) {
-            console.warn("Face API models are still loading or failed. Falling back to center sampling for speed.");
-            avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
-        } else {
-            // Use smaller inputSize (e.g. 320 instead of default 416) for faster mobile detection
-            const detectPromise = faceapi.detectSingleFace(
-                canvas, // Use the resized canvas instead of original img
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 320 })
-            ).withFaceLandmarks();
-
-            // Implement a 3-second timeout protection in case WebGL backend hangs indefinitely on mobile
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Face API Timeout')), 3000);
-            });
-
-            const detection = await Promise.race([detectPromise, timeoutPromise]);
-
-            if (detection) {
-                const box = detection.detection.box;
-
-                // Sample points based on the bounding box for cheeks and forehead
-                const cheekL = { x: box.x + box.width * 0.25, y: box.y + box.height * 0.6 };
-                const cheekR = { x: box.x + box.width * 0.75, y: box.y + box.height * 0.6 };
-                const forehead = { x: box.x + box.width * 0.5, y: box.y + box.height * 0.2 };
-
-                const samples = [
-                    getColorAtPoint(ctx, cheekL.x, cheekL.y, canvas.width, canvas.height),
-                    getColorAtPoint(ctx, cheekR.x, cheekR.y, canvas.width, canvas.height),
-                    getColorAtPoint(ctx, forehead.x, forehead.y, canvas.width, canvas.height)
-                ].filter(s => s !== null);
-
-                if (samples.length > 0) {
-                    avgColor = averageColor(samples);
-                    console.log("Face detected via AI. Used specific facial regions.");
-                } else {
-                    throw new Error("Invalid sample points.");
-                }
-            } else {
-                console.warn("No face detected by AI. Falling back to center sampling.");
-                avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
-            }
-        }
-    } catch (e) {
-        console.error("Face API processing error:", e);
-        avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
-    }
+    // Fall back to fast, robust center sampling to fix mobile hanging issues completely.
+    let avgColor = averageColor(getSkinSamples(ctx, canvas.width, canvas.height));
 
     const hsl = rgbToHsl(avgColor.r, avgColor.g, avgColor.b);
     const undertone = analyzeUndertone(avgColor);

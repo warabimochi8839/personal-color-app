@@ -373,13 +373,11 @@ const PERSONAL_COLOR_DATA = {
                 { name: 'ベリーピンク', color: '#8E4585', description: '大人っぽく' },
                 { name: 'ピンクベージュ', color: '#DBB2AB', description: 'ナチュラル' }
             ],
-            foundation: {
-                colors: [
-                    { name: 'ピンクオークル', color: '#F5DEB3', description: '標準肌向け' },
-                    { name: 'ナチュラルベージュ', color: '#F5E6D3', description: '明るい肌向け' },
-                    { name: 'ライトピンク', color: '#FFE4E1', description: '色白肌向け' }
-                ]
-            },
+            foundation: [
+                { name: 'ピンクオークル', color: '#F5DEB3', description: '標準肌向け' },
+                { name: 'ナチュラルベージュ', color: '#F5E6D3', description: '明るい肌向け' },
+                { name: 'ライトピンク', color: '#FFE4E1', description: '色白肌向け' }
+            ],
             eyeliner: [
                 { name: 'ブラック', color: '#000000', description: 'くっきり' },
                 { name: 'ネイビー', color: '#000080', description: 'クール' },

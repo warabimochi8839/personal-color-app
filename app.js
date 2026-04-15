@@ -1,6 +1,22 @@
 import { PERSONAL_COLOR_DATA, SKELETON_DATA } from './color-data.js';
 import * as storage from './storage.js';
 
+// HTML属性に安全に埋め込むためのエスケープ
+function escapeAttr(str) {
+    return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// 名前ベースの決定的な価格生成（レンダーごとに変わらない）
+function stablePrice(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+    }
+    const thousands = (Math.abs(hash) % 3) + 1;
+    const hundreds = (Math.abs(hash >> 8) % 8) + 1;
+    return `${thousands},${hundreds}00`;
+}
+
 // DOM Elements
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -509,19 +525,21 @@ function renderMakeupCards(resultData, typeId) {
     makeupList.innerHTML = allMakeup.slice(0, 8).map(m => {
         const isFav = savedItems.some(item => item.name === m.name && item.color === m.color);
         const favClass = isFav ? 'fav-btn active' : 'fav-btn';
-
-        return `
-        <div class="product-card card">
-            <div class="product-img-box">
-                <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
-                <button class="${favClass}" data-item='${JSON.stringify({
+        const price = stablePrice(m.name);
+        const itemJson = escapeAttr(JSON.stringify({
             name: m.name,
             color: m.color,
             category: m.category,
             typeId: typeId,
             typeBadge: getSeasonBadgeText(typeId),
-            price: Math.floor(Math.random() * 3 + 1) + "," + Math.floor(Math.random() * 8 + 1) + "00"
-        })}'>
+            price: price,
+        }));
+
+        return `
+        <div class="product-card card">
+            <div class="product-img-box">
+                <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
+                <button class="${favClass}" data-item="${itemJson}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
                     </svg>
@@ -531,7 +549,7 @@ function renderMakeupCards(resultData, typeId) {
                 <span class="product-tag" style="background-color: var(--season-${typeId}); color: #000;">${getSeasonBadgeText(typeId)}</span>
                 <span class="product-name">${m.name}</span>
                 <span class="product-brand">${m.category} Item</span>
-                <span class="product-price">¥${Math.floor(Math.random() * 3 + 1)},${Math.floor(Math.random() * 8 + 1)}00</span>
+                <span class="product-price">¥${price}</span>
             </div>
         </div>
     `}).join('');
@@ -574,17 +592,19 @@ function renderFashionColors(containerId, colors, categoryName, typeId, isAvoid 
         const isFav = savedItems.some(item => item.name === c.name && item.color === c.color);
         const favClass = isFav ? 'fav-swatch-btn active' : 'fav-swatch-btn';
 
-        return `
-        <div class="fashion-color-swatch-wrapper" style="position:relative; display:inline-block; margin-right:12px; margin-bottom:12px;">
-            <div class="fashion-color-swatch" style="background-color: ${c.color}; width:48px; height:48px; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-            <button class="${favClass}" style="position:absolute; bottom:-4px; right:-4px; width:20px; height:20px; background:rgba(0,0,0,0.5); border-radius:50%; display:flex; align-items:center; justify-content:center;" data-item='${JSON.stringify({
+        const itemJson = escapeAttr(JSON.stringify({
             name: c.name,
             color: c.color,
             category: categoryName,
             typeId: typeId,
             typeBadge: getSeasonBadgeText(typeId),
-            price: '-'
-        })}'>
+            price: '-',
+        }));
+
+        return `
+        <div class="fashion-color-swatch-wrapper" style="position:relative; display:inline-block; margin-right:12px; margin-bottom:12px;">
+            <div class="fashion-color-swatch" style="background-color: ${c.color}; width:48px; height:48px; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+            <button class="${favClass}" style="position:absolute; bottom:-4px; right:-4px; width:20px; height:20px; background:rgba(0,0,0,0.5); border-radius:50%; display:flex; align-items:center; justify-content:center;" data-item="${itemJson}">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
                 </svg>
@@ -792,11 +812,13 @@ function renderCloset() {
         displayItems.reverse();
     }
 
-    grid.innerHTML = displayItems.map(m => `
+    grid.innerHTML = displayItems.map(m => {
+        const itemJson = escapeAttr(JSON.stringify(m));
+        return `
         <div class="product-card card" style="width:100%; min-width:unset;">
             <div class="product-img-box">
                 <div style="width:100%; height:100%; background:${m.color}; opacity:0.8;"></div>
-                <button class="fav-btn active" data-item='${JSON.stringify(m)}'>
+                <button class="fav-btn active" data-item="${itemJson}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78v0z"></path>
                     </svg>
@@ -809,7 +831,7 @@ function renderCloset() {
                 <span class="product-price">¥${m.price || '1,000'}</span>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     // Remove from closet directly
     document.querySelectorAll('#closetGrid .fav-btn').forEach(btn => {
